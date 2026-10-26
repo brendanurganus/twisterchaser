@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Twister Chaser: playback</title>
+  <link rel="stylesheet" href="vendor/maplibre/maplibre-gl.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="map" aria-label="3D terrain map of the tornado path"></div>
+
+  <div id="loading" role="status">
+    <p id="loadingText">Loading terrain and aerial imagery</p>
+  </div>
+
+  <!-- Readout: always visible, expands for detail -->
+  <section id="readout" class="panel" aria-label="Tornado readout">
+    <header class="ro-head">
+      <span id="efChip" class="chip" aria-label="EF rating"></span>
+      <div class="ro-title">
+        <h1 id="tName"></h1>
+        <p id="tSub"></p>
+      </div>
+    </header>
+    <dl class="stats" id="stats">
+      <div><dt>Local time</dt><dd id="sTime">&nbsp;</dd></div>
+      <div><dt>Distance</dt><dd id="sDist">&nbsp;</dd></div>
+      <div><dt>Width now</dt><dd id="sWidth">&nbsp;</dd></div>
+      <div><dt>Rating now</dt><dd id="sEF">&nbsp;</dd></div>
+    </dl>
+    <button id="moreBtn" class="link" aria-expanded="false" aria-controls="more">More detail</button>
+    <div id="more" hidden>
+      <canvas id="mini" width="640" height="360" aria-label="Mini-map of the path, damage swath and warning area"></canvas>
+      <h2>Tornado warning</h2>
+      <div id="warnBox"></div>
+      <h2>NWS survey notes</h2>
+      <pre id="notes"></pre>
+      <h2>How this is drawn</h2>
+      <ul id="honesty"></ul>
+      <p class="keys">Keys: space plays or pauses, C changes camera, S changes speed, R restarts, O returns to the overview.</p>
+    </div>
+  </section>
+
+  <!-- Camera and funnel controls -->
+  <nav id="rail" class="panel" aria-label="View controls" hidden>
+    <div id="camGroup" role="group" aria-label="Camera"></div>
+    <div class="rule"></div>
+    <div id="funnelGroup" role="group" aria-label="Funnel size">
+      <button data-funnel="damage" aria-pressed="true">Sized to damage width</button>
+      <button data-funnel="realistic" aria-pressed="false">Realistic funnel size</button>
+      <p id="funnelNote">Depiction</p>
+    </div>
+    <div class="rule"></div>
+    <button id="btnOverview" class="plain">Back to overview</button>
+  </nav>
+
+  <!-- Overview card: shown before playback -->
+  <section id="overviewCard" class="panel" aria-label="Tornado summary">
+    <ul id="facts" class="facts"></ul>
+    <p id="ovNote"></p>
+    <button id="btnWatch" class="primary">Play</button>
+  </section>
+
+  <!-- Transport: shown during playback -->
+  <footer id="transport" class="panel" hidden>
+    <div class="tr-row">
+      <button id="btnRestart" class="icon" aria-label="Restart">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 5v14M19 5.5v13L9 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      </button>
+      <button id="btnPlay" class="icon big" aria-label="Pause">
+        <svg id="icPause" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+        <svg id="icPlay" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" hidden><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>
+      </button>
+      <div id="speeds" role="group" aria-label="Playback speed">
+        <button data-speed="1" aria-pressed="true">1x</button>
+        <button data-speed="10" aria-pressed="false">10x</button>
+        <button data-speed="60" aria-pressed="false">60x</button>
+      </div>
+      <output id="elapsed" aria-live="off">0:00 / 0:00</output>
+    </div>
+    <div id="scrub">
+      <div id="scrubTrack"></div>
+      <div id="warnBand" hidden></div>
+      <div id="scrubFill"></div>
+      <div id="warnTick" hidden></div>
+      <input id="scrubInput" type="range" min="0" max="1000" value="0" aria-label="Position in the tornado's life">
+    </div>
+    <p id="scrubCaption"></p>
+    <ul id="tags" class="tags"></ul>
+  </footer>
+
+  <script type="module" src="js/playback.js"></script>
+</body>
+</html>

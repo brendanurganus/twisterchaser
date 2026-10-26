@@ -20,6 +20,7 @@ import csv
 import datetime as dt
 import hashlib
 import json
+import math
 import re
 import statistics
 import sys
@@ -30,7 +31,7 @@ import numpy as np
 import shapefile  # pyshp
 from pyproj import Geod, Transformer
 from shapely import STRtree
-from shapely.geometry import MultiPolygon, Point, mapping, shape
+from shapely.geometry import LineString, MultiPolygon, Point, mapping, shape
 from shapely.ops import transform as shp_transform
 from timezonefinder import TimezoneFinder
 
@@ -189,6 +190,105 @@ def ensure_places_csv():
                 continue
             n += 1
     print(f"  wrote places.csv ({n} places)")
+
+
+
+def swath_profile(line, pairs, width_m_hint):
+    """Resample a track's real damage outline into cross-track slices.
+
+    The outline is a set of polygons (one per EF zone). To let the swath grow
+    behind the tornado we cut the track every ~15-120 m with a line at right
+    angles and measure, for each EF level k, how far the area rated >= k
+    extends to the left (+) and right (-) of the track. Because zones are
+    nested, level k+1 always sits inside level k.
+
+    Returns arrays ready for the browser, or None if nothing usable.
+    """
+    L = line.length
+    if L < 30 or not pairs:
+        return None
+    n = max(2, int(math.ceil(L / min(120.0, max(15.0, L / 500.0)))))
+    s_arr = np.linspace(0.0, L, n + 1)
+    centers = [line.interpolate(float(s)) for s in s_arr]
+    cx = np.array([c.x for c in centers])
+    cy = np.array([c.y for c in centers])
+    H = min(5000.0, max(1500.0, 3.0 * width_m_hint))
+    polys = [pg for _, pg in pairs]
+    efs = [ef for ef, _ in pairs]
+    tree = STRtree(polys)
+    lo_ef, hi_ef = min(efs), max(efs)
+    levels = list(range(lo_ef, hi_ef + 1))
+    A = np.full((len(levels), n + 1), np.nan)
+    B = np.full((len(levels), n + 1), np.nan)
+    for i in range(n + 1):
+        i0, i1 = max(0, i - 1), min(n, i + 1)
+        tx, ty = cx[i1] - cx[i0], cy[i1] - cy[i0]
+        nrm = math.hypot(tx, ty)
+        if nrm == 0:
+            continue
+        nx, ny = -ty / nrm, tx / nrm          # unit normal pointing LEFT of travel
+        sec = LineString([(cx[i] - nx * H, cy[i] - ny * H), (cx[i] + nx * H, cy[i] + ny * H)])
+        segs = []
+        for j in tree.query(sec, predicate="intersects"):
+            inter = sec.intersection(polys[int(j)])
+            parts = getattr(inter, "geoms", [inter])
+            for part in parts:
+                if part.geom_type != "LineString" or part.length < 0.5:
+                    continue
+                u = sorted(sec.project(Point(c)) - H for c in (part.coords[0], part.coords[-1]))
+                segs.append((u[0], u[1], efs[int(j)]))
+        if not segs:
+            continue
+        segs.sort()
+        merged = [[segs[0][0], segs[0][1]]]
+        for lo, hi, _ in segs[1:]:
+            if lo <= merged[-1][1] + 5:
+                merged[-1][1] = max(merged[-1][1], hi)
+            else:
+                merged.append([lo, hi])
+        main = next((m for m in merged if m[0] <= 0 <= m[1]), None)
+        if main is None:
+            near = min(merged, key=lambda m: min(abs(m[0]), abs(m[1])))
+            main = near if min(abs(near[0]), abs(near[1])) <= 400 else None
+        if main is None:
+            continue
+        for k, lev in enumerate(levels):
+            ins = [(max(lo, main[0]), min(hi, main[1])) for lo, hi, ef in segs
+                   if ef >= lev and hi > main[0] and lo < main[1]]
+            if ins:
+                A[k, i] = min(a for a, _ in ins)
+                B[k, i] = max(b for _, b in ins)
+    if np.all(np.isnan(A)):
+        return None
+
+    def smooth(v, w=2):
+        out = v.copy()
+        for i in range(len(v)):
+            win = v[max(0, i - w): i + w + 1]
+            win = win[~np.isnan(win)]
+            if len(win) and not np.isnan(v[i]):
+                out[i] = np.median(win)
+        return out
+
+    for k in range(len(levels)):
+        A[k], B[k] = smooth(A[k]), smooth(B[k])
+    # nesting guarantee: a higher level never pokes outside the level below it
+    for k in range(1, len(levels)):
+        A[k] = np.where(np.isnan(A[k]), np.nan, np.maximum(A[k], np.where(np.isnan(A[k - 1]), A[k], A[k - 1])))
+        B[k] = np.where(np.isnan(B[k]), np.nan, np.minimum(B[k], np.where(np.isnan(B[k - 1]), B[k], B[k - 1])))
+    A0 = np.nan_to_num(A, nan=0.0)
+    B0 = np.nan_to_num(B, nan=0.0)
+    ll = [FROM_5070(float(x), float(y)) for x, y in zip(cx, cy)]
+    return {
+        "levels": levels,
+        "length_m": round(L, 1),
+        "s": [round(float(v), 1) for v in s_arr],
+        "c": [[round(a, 5), round(b, 5)] for a, b in ll],
+        "a": [[int(round(v)) for v in row] for row in A0],
+        "b": [[int(round(v)) for v in row] for row in B0],
+        "note": "Offsets in metres, positive to the left of travel. a<b is the extent of "
+                "area rated at or above each level; a==b means that level is absent.",
+    }
 
 
 # --------------------------------------------------------------- the build
@@ -377,7 +477,7 @@ def main():
         cands.sort(reverse=True)
         i = cands[0][3]
         n_matched += 1
-        assigned[i].append(pg)
+        assigned[i].append((int(pp["efscale"][2]), pg))
         simp = pg.simplify(3, preserve_topology=True)
         gj = mapping(shp_transform(FROM_5070, simp))
         # round coordinates
@@ -389,12 +489,21 @@ def main():
         outline_feats.append({"type": "Feature",
                               "properties": {"tid": recs[i]["id"], "ef": pp["efscale"]},
                               "geometry": gj})
-    for i, pgs in assigned.items():
+    swath_dir = OUT / "swaths"
+    swath_dir.mkdir(exist_ok=True)
+    for old in swath_dir.glob("*.json"):
+        old.unlink()
+    for i, pairs in assigned.items():
         from shapely.ops import unary_union
+        pgs = [pg for _, pg in pairs]
         u = unary_union(pgs).buffer(40)
         L = proj_lines[i]
         recs[i]["has_outline"] = True
         recs[i]["outline_coverage"] = round(min(1.0, L.intersection(u).length / L.length), 2) if L.length else 0.0
+        prof = swath_profile(L, pairs, (recs[i]["width_yd"] or 0) * 0.9144)
+        if prof:
+            prof["id"] = recs[i]["id"]
+            (swath_dir / f"{recs[i]['id']}.json").write_text(json.dumps(prof, separators=(",", ":")))
     rep["outlines"] = {
         "tornado_rated_polygons": n_poly_rated,
         "matched_to_a_track": n_matched,
