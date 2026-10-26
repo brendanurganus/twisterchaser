@@ -24,16 +24,20 @@ const EF_MATCH = ['match', ['get', 'ef'], ...C.EF_FILL.flatMap((c, i) => [i, c])
 
 async function main() {
   const hudLoading = document.getElementById('loading');
-  const [tData, wData] = await Promise.all([
-    fetchJSON('../data/tornadoes-2026.json'),
-    fetchJSON('../data/warnings-2026.json'),
-  ]);
+  const famousId = (params.get('id') ?? '').startsWith('famous-');
+  const [tData, wData] = await Promise.all(famousId
+    ? [fetchJSON('../data/famous.json'), fetchJSON('../data/warnings-famous.json')]
+    : [fetchJSON('../data/tornadoes-2026.json'), fetchJSON('../data/warnings-2026.json')]);
   const all = tData.tornadoes;
   const t = params.get('id')
     ? all.find((x) => x.id === params.get('id'))
     : all.find((x) => /Kankakee - Roselawn/.test(x.name ?? ''));
   if (!t) throw new Error('Tornado not found');
   const warning = t.warning ? wData[t.warning.key] : null;
+  // Famous tornadoes crossed several warnings. The first is the one the lead time is measured from; all of them draw.
+  const warningRings = t.famous
+    ? Object.values(wData).filter((w) => w.tornado_ids?.includes(t.id)).map((w) => w.polygon)
+    : (warning ? [warning.polygon] : []);
   document.getElementById('backToMap').href = `index.html?id=${encodeURIComponent(t.id)}`;
 
   const frame = new Frame(t.path[0][0], t.path[0][1]);
@@ -71,7 +75,7 @@ async function main() {
         warn: {
           type: 'geojson',
           data: warning
-            ? { type: 'Feature', geometry: { type: 'LineString', coordinates: warning.polygon } }
+            ? { type: 'Feature', geometry: { type: 'MultiLineString', coordinates: warningRings } }
             : EMPTY,
         },
       },

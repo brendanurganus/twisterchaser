@@ -2,7 +2,7 @@
 // so the map, the timeline, the lists and the numbers always describe the same set of tornadoes.
 
 import { EF_FILL, EF_LINE } from './config.js';
-import { MONTHS, MONTHS_LONG, num, dayLong, nameWithState } from './format.js';
+import { MONTHS, MONTHS_LONG, num, dayLong, nameWithState, dayFmt, ratingLabel } from './format.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -22,10 +22,10 @@ const LISTS = [
     val: (t) => `${num(t.width_yd)} yd` },
 ];
 
-export function createDock({ all, filters, stateNames, onPick, showTip, hideTip }) {
+export function createDock({ all, famous = [], warnings, filters, stateNames, onPick, showTip, hideTip }) {
   const year = filters.year;
   const dock = $('dock'), tabs = [...document.querySelectorAll('#dockTabs button')];
-  const panels = { filters: $('panelFilters'), lists: $('panelLists'), stats: $('panelStats') };
+  const panels = { filters: $('panelFilters'), lists: $('panelLists'), stats: $('panelStats'), famous: $('panelFamous') };
   let active = null, listKind = 'strongest';
   const openListeners = new Set();
 
@@ -54,12 +54,17 @@ export function createDock({ all, filters, stateNames, onPick, showTip, hideTip 
     <select id="fState" aria-label="State"><option value="">All states</option>${states.map((s) => `<option value="${s}"></option>`).join('')}</select>
     <h3>Deaths</h3>
     <div class="seg" id="fDeaths"><button data-d="0">Any</button><button data-d="1">1 or more</button><button data-d="2">2 or more</button></div>
+    <h3>Map</h3>
+    <button id="fWarn" class="switch" role="switch" aria-pressed="false"><i></i><span>Show tornado warning areas</span></button>
+    <p class="dim sm" id="fWarnNote">Red outlines mark the area each NWS tornado warning covered.</p>
     <p class="result"><span id="fCount"></span> <button id="fReset" class="link">Reset filters</button></p>`;
   $('fEF').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) filters.toggleEF(Number(b.dataset.ef)); });
   $('fMonth').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) filters.toggleMonth(Number(b.dataset.m)); });
   $('fState').addEventListener('change', (e) => { filters.set({ state: e.target.value }); onPick.stateChanged?.(e.target.value); });
   $('fDeaths').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) filters.set({ minDeaths: Number(b.dataset.d) }); });
   $('fReset').addEventListener('click', () => filters.reset());
+  $('fWarn').addEventListener('click', () => warnings.set(!warnings.get()));
+  $('fWarn').setAttribute('aria-pressed', String(warnings.get()));
 
   function renderFilters() {
     const st = filters.state;
@@ -99,6 +104,18 @@ export function createDock({ all, filters, stateNames, onPick, showTip, hideTip 
         <span class="val">${esc(spec.val(t))}</span>
       </button></li>`).join('') : `<li class="none">${spec.empty}</li>`;
   }
+
+  // ---- FAMOUS -------------------------------------------------------------------
+  const FP = panels.famous;
+  FP.innerHTML = `
+    <p class="dim">Ten well-known tornadoes from 1999 to 2024, always on the map. They are not counted in the filters, lists or stats, which cover ${year} only.</p>
+    <ol class="toplist famous" id="famList">${famous.map((t) => `
+      <li><button data-id="${t.id}">
+        <span class="chip sm" style="background:${EF_FILL[t.efnum]};border-color:${EF_LINE[t.efnum]}">${esc(ratingLabel(t))}</span>
+        <span class="nm">${esc(t.label)}<small>${esc(t.state ?? '')}, ${esc(dayFmt(t.tz).format(Date.parse(t.start_utc)).replace(/^\w+, /, ''))}${t.track_kind === 'traced' ? ' <em class="approx">approx.</em>' : ''}</small></span>
+        <span class="val">${t.deaths} ${t.deaths === 1 ? 'death' : 'deaths'}</span>
+      </button></li>`).join('')}</ol>`;
+  $('famList').addEventListener('click', (e) => { const b = e.target.closest('button[data-id]'); if (b) onPick.select(b.dataset.id); });
 
   // ---- STATS ---------------------------------------------------------------------
   const SP = panels.stats;

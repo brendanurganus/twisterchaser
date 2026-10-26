@@ -29,11 +29,13 @@
         <button data-tab="filters" role="tab" aria-selected="false">Filters</button>
         <button data-tab="lists" role="tab" aria-selected="false">Top lists</button>
         <button data-tab="stats" role="tab" aria-selected="false">Stats</button>
+        <button data-tab="famous" role="tab" aria-selected="false">Famous</button>
       </nav>
       <div id="dockBody" hidden>
         <div id="panelFilters" hidden></div>
         <div id="panelLists" hidden></div>
         <div id="panelStats" hidden></div>
+        <div id="panelFamous" hidden></div>
       </div>
     </section>
   </div>
@@ -50,6 +52,7 @@
     <button id="zoomOut" aria-label="Zoom out" title="Zoom out"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
     <button id="resetView" aria-label="Face north and reset the tilt" title="Face north and reset the tilt"><svg id="compass" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 3l4 9h-8z" fill="#e0453a"/><path d="M12 21l-4-9h8z" fill="currentColor" opacity="0.7"/></svg></button>
     <button id="fitAll" aria-label="Fit every tornado in view" title="Fit every tornado in view"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button id="warnBtn" aria-label="Show tornado warning areas" aria-pressed="false" title="Show tornado warning areas"><svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><path d="M12 3.5L21.5 20h-19z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v5M12 17.4v.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     <button id="helpBtn" aria-label="How to move the map" aria-expanded="false" aria-controls="help" title="How to move the map">?</button>
     <span class="sep" aria-hidden="true"></span>
     <div id="viewToggle" role="group" aria-label="Map view">
@@ -65,6 +68,7 @@
       <li><b>Zoom:</b> scroll, pinch, double-click, or the + and - keys.</li>
       <li><b>Tilt and turn:</b> right-drag or Ctrl-drag, or twist with two fingers. Shift with the arrow keys turns and tilts.</li>
       <li><b>Lost?</b> The compass faces north, the corners button fits every tornado.</li>
+      <li><b>Warnings:</b> the triangle button (or the switch under Filters) shows tornado warning areas. A selected tornado always shows its own.</li>
       <li><b>Search:</b> press / to jump to the search box.</li>
     </ul>
   </div>
@@ -87,6 +91,11 @@
 
     <h3>Human impact</h3>
     <p id="cImpact"></p>
+
+    <div id="cCavWrap" hidden>
+      <h3>Where sources differ</h3>
+      <ul id="cCav" class="cav"></ul>
+    </div>
 
     <h3>Tornado warning</h3>
     <div id="cWarn"></div>

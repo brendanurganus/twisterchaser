@@ -34,3 +34,22 @@ export function monthStartDay(m, year) {
 export function nameWithState(t) {
   return t.state && !/,\s*[A-Z]{2}$/.test(t.label) ? `${t.label}, ${t.state}` : t.label;
 }
+
+// "EF4" for modern tornadoes, "F5" for the 1999 tornado that predates the Enhanced Fujita scale.
+export const ratingLabel = (t) => t.rating ?? `EF${t.efnum}`;
+
+// Plain-language limits of a famous tornado's drawn path and damage shading, shown on the card and in playback.
+export function trackNotes(t) {
+  const out = [];
+  if (t.track_kind === 'traced') {
+    out.push('The path is approximate. It was hand-traced through landmarks the NWS names along the track, so it can be off by a mile or more, and the damage band is drawn at one constant width.');
+  } else if (t.track_kind === 'outline') {
+    out.push('The path is the middle of the NWS damage outline, not a surveyed centerline.');
+  }
+  if (t.outline_kind === 'envelope') {
+    out.push('The NWS published one damage outline for this tornado, not separate rating zones, so the whole shaded area is one color.');
+  } else if (t.outline_kind === 'none' && t.track_kind === 'line') {
+    out.push('No damage outline is stored for this tornado, so the damage band is drawn at one constant width.');
+  }
+  return out;
+}

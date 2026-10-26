@@ -1,0 +1,157 @@
+{
+ "famous-joplin-2011": {
+  "spc_start_minus_ours_min": 0.0,
+  "drawn_mi": 21.79,
+  "spc_len_mi": 21.62,
+  "start_offset_from_spc_km": 0.0,
+  "end_offset_from_spc_km": 0.0,
+  "speed_mph": 34.4,
+  "outline_kind": "none",
+  "warning": {
+   "lead_min": 17.0,
+   "basis": "active_at_start",
+   "n_on_path": 2,
+   "first": "SGF-TO-W-0031-2011"
+  }
+ },
+ "famous-tuscaloosa-2011": {
+  "spc_start_minus_ours_min": 0.0,
+  "drawn_mi": 81.47,
+  "spc_len_mi": 80.68,
+  "start_offset_from_spc_km": 0.2,
+  "end_offset_from_spc_km": 0.01,
+  "speed_mph": 53.7,
+  "max_swath_width_yd": 1891,
+  "outline_kind": "envelope",
+  "warning": {
+   "lead_min": 65.0,
+   "basis": "active_at_start",
+   "n_on_path": 5,
+   "first": "BMX-TO-W-0104-2011"
+  }
+ },
+ "famous-hackleburg-2011": {
+  "spc_start_minus_ours_min": 0.0,
+  "drawn_mi": 99.83,
+  "spc_len_mi": 132.0,
+  "start_offset_from_spc_km": 0.02,
+  "end_offset_from_spc_km": 52.51,
+  "speed_mph": 57.0,
+  "max_swath_width_yd": 1322,
+  "outline_kind": "zoned",
+  "warning": {
+   "lead_min": 6.0,
+   "basis": "active_at_start",
+   "n_on_path": 12,
+   "first": "BMX-TO-W-0101-2011"
+  }
+ },
+ "famous-elreno-2011": {
+  "spc_start_minus_ours_min": -1.0,
+  "drawn_mi": 60.16,
+  "spc_len_mi": 63.1,
+  "start_offset_from_spc_km": 3.17,
+  "end_offset_from_spc_km": 2.01,
+  "speed_mph": 34.7,
+  "max_swath_width_yd": 1919,
+  "outline_kind": "envelope",
+  "warning": {
+   "lead_min": 10.0,
+   "basis": "active_at_start",
+   "n_on_path": 5,
+   "first": "OUN-TO-W-0042-2011"
+  }
+ },
+ "famous-moore-2013": {
+  "spc_start_minus_ours_min": 0.0,
+  "drawn_mi": 13.67,
+  "spc_len_mi": 13.85,
+  "start_offset_from_spc_km": 0.45,
+  "end_offset_from_spc_km": 0.15,
+  "speed_mph": 21.0,
+  "max_swath_width_yd": 1752,
+  "outline_kind": "zoned",
+  "warning": {
+   "lead_min": 16.0,
+   "basis": "active_at_start",
+   "n_on_path": 3,
+   "first": "OUN-TO-W-0024-2013"
+  }
+ },
+ "famous-elreno-2013": {
+  "spc_start_minus_ours_min": 0.0,
+  "drawn_mi": 16.32,
+  "spc_len_mi": 16.2,
+  "start_offset_from_spc_km": 1.06,
+  "end_offset_from_spc_km": 0.31,
+  "speed_mph": 24.5,
+  "max_swath_width_yd": 4661,
+  "outline_kind": "envelope",
+  "warning": {
+   "lead_min": 27.0,
+   "basis": "active_at_start",
+   "n_on_path": 3,
+   "first": "OUN-TO-W-0057-2013"
+  }
+ },
+ "famous-greenfield-2024": {
+  "spc_start_minus_ours_min": 2.0,
+  "drawn_mi": 43.09,
+  "spc_len_mi": 40.65,
+  "start_offset_from_spc_km": 2.8,
+  "end_offset_from_spc_km": 0.0,
+  "speed_mph": 53.9,
+  "outline_kind": "none",
+  "warning": {
+   "lead_min": 19.0,
+   "basis": "active_at_start",
+   "n_on_path": 4,
+   "first": "OAX-TO-W-0077-2024"
+  }
+ },
+ "famous-fairdale-2015": {
+  "spc_start_minus_ours_min": 0.0,
+  "drawn_mi": 30.32,
+  "spc_len_mi": 30.14,
+  "start_offset_from_spc_km": 0.0,
+  "end_offset_from_spc_km": 0.03,
+  "speed_mph": 44.4,
+  "outline_kind": "none",
+  "warning": {
+   "lead_min": 4.0,
+   "basis": "active_at_start",
+   "n_on_path": 4,
+   "first": "LOT-TO-W-0005-2015"
+  }
+ },
+ "famous-moore-1999": {
+  "spc_start_minus_ours_min": 0.0,
+  "drawn_mi": 35.87,
+  "spc_len_mi": 37.0,
+  "start_offset_from_spc_km": 0.0,
+  "end_offset_from_spc_km": 3.0,
+  "speed_mph": 26.2,
+  "outline_kind": "none",
+  "warning": {
+   "lead_min": 19.0,
+   "basis": "active_at_start",
+   "n_on_path": 4,
+   "first": "OUN-TO-W-0040-1999"
+  }
+ },
+ "famous-greensburg-2007": {
+  "spc_start_minus_ours_min": -3.0,
+  "drawn_mi": 21.53,
+  "spc_len_mi": 28.81,
+  "start_offset_from_spc_km": 0.0,
+  "end_offset_from_spc_km": 0.0,
+  "speed_mph": 20.8,
+  "outline_kind": "none",
+  "warning": {
+   "lead_min": 8.0,
+   "basis": "active_at_start",
+   "n_on_path": 3,
+   "first": "DDC-TO-W-0024-2007"
+  }
+ }
+}

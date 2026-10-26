@@ -1,0 +1,71 @@
+{
+ "famous-joplin-2011": {
+  "Twin Hills Country Club": {
+   "query": "Twin Hills Country Club, Joplin MO",
+   "lat": 37.0666931,
+   "lon": -94.563137,
+   "osm": "way/360435563",
+   "display": "Twin Hills Golf & Country Club, 2019, South Country Club Drive, Joplin, Jasper County, Missouri, 64801, United States"
+  },
+  "Main Street, 24th Street block": {
+   "query": "2400 S Main St, Joplin, MO",
+   "lat": 37.064393,
+   "lon": -94.514484,
+   "osm": "way/30471176",
+   "display": "2400, South Main Street, Joplin, Jasper County, Missouri, 64804, United States"
+  },
+  "Joplin High School": {
+   "query": "2104 Indiana Ave, Joplin, MO",
+   "lat": 37.0662645,
+   "lon": -94.5073596,
+   "osm": "relation/18864153",
+   "display": "Joplin High School, 2104, Indiana Avenue, Joplin, Jasper County, Missouri, 64804, United States"
+  },
+  "Range Line Road, 23rd Street block": {
+   "query": "2300 S Range Line Rd, Joplin, MO",
+   "lat": 37.0645602,
+   "lon": -94.4781341,
+   "osm": "way/549835646",
+   "display": "2300, South Range Line Road, Gateway Drive, Joplin, Jasper County, Missouri, 64804, United States"
+  }
+ },
+ "famous-moore-1999": {
+  "Bridge Creek": {
+   "query": "Bridge Creek, Oklahoma",
+   "lat": 35.2350638,
+   "lon": -97.7367081,
+   "osm": "relation/185085",
+   "display": "Bridge Creek, Grady County, Oklahoma, United States"
+  },
+  "Moore": {
+   "query": "Moore, Oklahoma",
+   "lat": 35.3383254,
+   "lon": -97.4867045,
+   "osm": "relation/184097",
+   "display": "Moore, Cleveland County, Oklahoma, 73160, United States"
+  },
+  "Del City": {
+   "query": "Del City, Oklahoma",
+   "lat": 35.442007,
+   "lon": -97.4408709,
+   "osm": "relation/183806",
+   "display": "Del City, Oklahoma County, Oklahoma, 73115, United States"
+  },
+  "Midwest City": {
+   "query": "Midwest City, Oklahoma",
+   "lat": 35.4495097,
+   "lon": -97.3967025,
+   "osm": "relation/184316",
+   "display": "Midwest City, Oklahoma County, Oklahoma, United States"
+  }
+ },
+ "famous-greensburg-2007": {
+  "Greensburg": {
+   "query": "Greensburg, Kansas",
+   "lat": 37.6031884,
+   "lon": -99.2929639,
+   "osm": "relation/129626",
+   "display": "Greensburg, Kiowa Rural Township, Kiowa County, Kansas, 67054, United States"
+  }
+ }
+}

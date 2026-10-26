@@ -4,6 +4,7 @@
 import { EF_FILL, EF_LINE, WARNING_RED, YD, MI, NOMINAL_WIDTH_M } from './config.js';
 import { CAMERA_MODES } from './cameras.js';
 import { clamp } from './geo.js';
+import { ratingLabel, trackNotes } from './format.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -25,10 +26,11 @@ export function durText(min) {
   const m = Math.round(min);
   return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
 }
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const num = (v, d = 0) => v.toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
 
-function chip(el, efnum) {
-  el.textContent = `EF${efnum}`;
+function chip(el, efnum, label) {
+  el.textContent = label ?? `EF${efnum}`;
   el.style.background = EF_FILL[efnum];
   el.style.borderColor = EF_LINE[efnum];
 }
@@ -47,10 +49,15 @@ export function createHud({ t, warning, swath, track, frame, playable, reason, h
   const cf = clockFmt(tz);
 
   // ---- header ---------------------------------------------------------
-  chip($('efChip'), t.efnum);
+  chip($('efChip'), t.efnum, ratingLabel(t));
   $('tName').textContent = t.label;
   $('tSub').textContent = `${t.state ?? ''}${t.state ? ', ' : ''}${dayFmt(tz).format(startMs)}`;
-  $('notes').textContent = t.notes ?? 'No survey notes were entered for this tornado.';
+  $('notes').textContent = t.famous
+    ? [t.story, t.notes ? `NWS survey comments:\n${t.notes}` : ''].filter(Boolean).join('\n\n')
+    : (t.notes ?? 'No survey notes were entered for this tornado.');
+  if (t.famous) for (const el of document.querySelectorAll('[data-notes-title]')) el.textContent = 'About this tornado';
+  // Famous tornadoes carry the drawn length separately: the hand-traced or outline-derived path can differ from the SPC length.
+  const shownMi = t.drawn_mi ?? t.length_mi;
 
   // ---- camera + funnel controls ---------------------------------------
   const camGroup = $('camGroup');
@@ -84,10 +91,10 @@ export function createHud({ t, warning, swath, track, frame, playable, reason, h
   const facts = $('facts');
   const maxW = swath.maxWidth();
   const widthKnown = t.width_yd != null;
-  li(facts, `<b>${num(t.length_mi, 1)} mi</b><span>path length</span>`);
+  li(facts, `<b>${num(t.length_mi, 1)} mi</b><span>path length${t.famous && t.drawn_mi && Math.abs(t.drawn_mi - t.length_mi) > 1 ? ` (${num(t.drawn_mi, 1)} drawn)` : ''}</span>`);
   li(facts, `<b>${widthKnown ? num(t.width_yd) + ' yd' : 'not recorded'}</b><span>maximum width</span>`);
   li(facts, `<b>${playable ? durText(t.duration_min) : 'unreliable'}</b><span>on the ground</span>`);
-  li(facts, `<b>${t.max_wind_mph ? t.max_wind_mph + ' mph' : 'not recorded'}</b><span>peak wind</span>`);
+  li(facts, `<b>${t.max_wind_text ?? (t.max_wind_mph ? t.max_wind_mph + ' mph' : 'not recorded')}</b><span>peak wind</span>`);
   li(facts, `<b>${t.deaths} ${t.deaths === 1 ? 'death' : 'deaths'}, ${t.injuries} injured</b><span>human toll</span>`);
   li(facts, `<b>${clockShort(tz).format(startMs)} to ${clockShort(tz).format(Date.parse(t.end_utc))} ${zoneName(startMs, tz)}</b><span>local time</span>`);
   if (warning && t.warning) {
@@ -99,7 +106,9 @@ export function createHud({ t, warning, swath, track, frame, playable, reason, h
     li(facts, `<b>no warning matched</b><span>in the NWS archive</span>`);
   }
   $('ovNote').textContent = playable
-    ? 'Press play to follow the tornado along its path.'
+    ? (t.track_kind === 'traced'
+      ? 'Press play to follow the tornado. The path and damage band are approximate: hand-traced through landmarks, drawn at one constant width.'
+      : 'Press play to follow the tornado along its path.')
     : `Playback is off for this tornado: ${reason}. The path, damage and survey notes are still here.`;
   $('btnWatch').disabled = !playable;
   $('btnWatch').textContent = 'Play';
@@ -131,10 +140,15 @@ export function createHud({ t, warning, swath, track, frame, playable, reason, h
   // ---- honesty notes ---------------------------------------------------
   const h = $('honesty');
   li(h, 'Position along the path is interpolated from the survey&rsquo;s start and end times at constant speed. Real tornadoes speed up and slow down, and the survey only records two times.');
+  for (const n of (t.caveats ?? [])) li(h, esc(n));
+  for (const n of trackNotes(t)) li(h, esc(n));
+  if (t.famous && t.warning?.warnings_on_path > 1) li(h, `${t.warning.warnings_on_path} tornado warnings touched this path. The lead time is measured from the earliest one that was active when the tornado began. All of them are outlined on the map.`);
   if (swath.approx) {
     li(h, widthKnown
       ? `Damage swath is an approximation: no survey outline exists for this tornado, so it is drawn as a constant band at the maximum surveyed width (${num(t.width_yd)} yd).`
       : `Damage swath is an approximation: no outline or width was recorded, so it is drawn as a constant ${num(NOMINAL_WIDTH_M / YD)} yd band.`);
+  } else if (!swath.zoned) {
+    li(h, `Damage swath is the NWS damage outline, drawn in one color (the tornado's overall rating) because the survey did not publish separate rating zones. Widest point on screen: ${num(maxW / YD)} yd.`);
   } else {
     li(h, `Damage swath is the NWS survey outline, resampled into slices across the path. Colors are the EF rating of each zone. Widest point on screen: ${num(maxW / YD)} yd.`);
   }
@@ -144,7 +158,8 @@ export function createHud({ t, warning, swath, track, frame, playable, reason, h
   // ---- tags under the transport ------------------------------------------
   const tags = $('tags');
   li(tags, 'Timing estimated');
-  li(tags, swath.approx ? 'Swath approximate' : 'Swath from survey outline');
+  li(tags, swath.approx ? 'Swath approximate' : (swath.zoned ? 'Swath from survey outline' : 'Swath one color'));
+  if (t.track_kind === 'traced') li(tags, 'Path approximate');
   const fTag = li(tags, 'Funnel depiction'); fTag.id = 'tagFunnel';
 
   // ---- scrub bar with the warning window --------------------------------
@@ -266,11 +281,12 @@ export function createHud({ t, warning, swath, track, frame, playable, reason, h
     update(info) {
       const p = clamp(info.sim / durSec, 0, 1);
       $('sTime').textContent = cf.format(startMs + info.sim * 1000);
-      $('sDist').textContent = `${num(t.length_mi * p, 1)} of ${num(t.length_mi, 1)} mi`;
+      $('sDist').textContent = `${num(shownMi * p, 1)} of ${num(shownMi, 1)} mi`;
       $('sWidth').textContent = swath.approx && !widthKnown ? 'not recorded' : `${num(info.widthM / YD)} yd`;
       const ef = $('sEF');
-      ef.textContent = `EF${info.efNow}`;
-      ef.style.color = EF_FILL[info.efNow];
+      // Without separate rating zones the bar can only know the tornado's overall rating.
+      ef.textContent = swath.zoned ? `EF${info.efNow}` : `${ratingLabel(t)} overall`;
+      ef.style.color = EF_FILL[swath.zoned ? info.efNow : t.efnum];
       $('elapsed').textContent = `${mmss(info.sim)} / ${mmss(durSec)}`;
       $('scrubFill').style.width = `${p * 100}%`;
       $('scrubInput').value = String(Math.round(p * 1000));
@@ -278,9 +294,9 @@ export function createHud({ t, warning, swath, track, frame, playable, reason, h
     },
     showOverviewSummary() {
       $('sTime').textContent = `${cf.format(startMs)}`;
-      $('sDist').textContent = `${num(t.length_mi, 1)} mi`;
+      $('sDist').textContent = `${num(shownMi, 1)} mi`;
       $('sWidth').textContent = widthKnown ? `${num(t.width_yd)} yd` : 'not recorded';
-      const ef = $('sEF'); ef.textContent = `EF${t.efnum}`; ef.style.color = EF_FILL[t.efnum];
+      const ef = $('sEF'); ef.textContent = ratingLabel(t); ef.style.color = EF_FILL[t.efnum];
       drawMini(swath.total, null);
     },
     redrawMini(sd, pos) { drawMini(sd, pos); },

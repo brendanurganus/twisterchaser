@@ -17,11 +17,12 @@ import { clamp } from './geo.js';
 const CHUNK = 48; // stations per static chunk
 
 export class Swath {
-  constructor({ frame, s, x, y, levels, A, B, approx }) {
+  constructor({ frame, s, x, y, levels, A, B, approx, zoned = true }) {
     this.frame = frame;
     this.s = s; this.x = x; this.y = y;
     this.levels = levels;      // EF numbers present, ascending
     this.approx = approx;      // true when drawn as a constant band
+    this.zoned = zoned;        // false when levels are one overall color, not separate rating zones
     this.n = s.length;
     this.total = s[s.length - 1];
     // unit normal pointing LEFT of travel, from neighbouring station centres
@@ -54,7 +55,7 @@ export class Swath {
   static fromProfile(frame, prof) {
     const x = [], y = [];
     for (const [lo, la] of prof.c) { const p = frame.toXY(lo, la); x.push(p[0]); y.push(p[1]); }
-    return new Swath({ frame, s: prof.s, x, y, levels: prof.levels, A: prof.a, B: prof.b, approx: false });
+    return new Swath({ frame, s: prof.s, x, y, levels: prof.levels, A: prof.a, B: prof.b, approx: false, zoned: prof.zoned !== false });
   }
 
   static fromBand(frame, track, widthM, efnum) {
@@ -66,7 +67,7 @@ export class Swath {
       s.push(si); x.push(p.x); y.push(p.y);
     }
     const a = new Array(s.length).fill(-widthM / 2), b = new Array(s.length).fill(widthM / 2);
-    return new Swath({ frame, s, x, y, levels: [efnum], A: [a], B: [b], approx: true });
+    return new Swath({ frame, s, x, y, levels: [efnum], A: [a], B: [b], approx: true, zoned: false });
   }
 
   // Interpolated slice at distance sd along the track.

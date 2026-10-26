@@ -492,7 +492,8 @@ def main():
     swath_dir = OUT / "swaths"
     swath_dir.mkdir(exist_ok=True)
     for old in swath_dir.glob("*.json"):
-        old.unlink()
+        if not old.name.startswith("famous-"):  # famous swaths are built by build_famous.py
+            old.unlink()
     for i, pairs in assigned.items():
         from shapely.ops import unary_union
         pgs = [pg for _, pg in pairs]

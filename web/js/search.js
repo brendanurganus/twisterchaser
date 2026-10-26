@@ -1,7 +1,7 @@
 // Search box: tornadoes by name or nearest town, places, states, and dates ("mar 10", "3/10", "2026-03-10", "april").
 
 import { EF_FILL, EF_LINE } from './config.js';
-import { MONTHS, MONTHS_LONG, dayIndexOf, dayLong, monthStartDay, daysInYear, num } from './format.js';
+import { MONTHS, MONTHS_LONG, dayIndexOf, dayLong, monthStartDay, daysInYear, num, dayFmt, ratingLabel } from './format.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -12,10 +12,11 @@ function miles(lon1, lat1, lon2, lat2) {
   return 3958.8 * 2 * Math.asin(Math.sqrt(a));
 }
 
-export function createSearch({ all, cities, stateNames, filters, actions }) {
+export function createSearch({ all, famous = [], cities, stateNames, filters, actions }) {
   const year = filters.year;
   const input = $('searchInput'), list = $('searchList');
   const tIndex = all.map((t) => ({ t, key: `${t.label} ${t.near?.place ?? ''} ${t.state ?? ''} ${stateNames[t.state] ?? ''}`.toLowerCase() }));
+  const fIndex = famous.map((t) => ({ t, key: `${t.label} ${t.near?.place ?? ''} ${t.state ?? ''} ${stateNames[t.state] ?? ''} ${t.year} ${t.rating} famous`.toLowerCase() }));
   const cIndex = cities.map((f) => ({ f, key: `${f.properties.name} ${f.properties.st} ${stateNames[f.properties.st] ?? ''}`.toLowerCase() }));
   const stateList = Object.entries(stateNames);
   const nDays = daysInYear(year);
@@ -75,6 +76,11 @@ export function createSearch({ all, cities, stateNames, filters, actions }) {
       if (!n) continue;
       out.push({ group: 'State', html: `<b>${esc(name)}</b><small>${n} tornadoes. Show only this state</small>`,
         run: () => { filters.set({ state: code }); actions.fitFiltered(); } });
+    }
+    // famous tornadoes
+    for (const { t } of fIndex.filter((x) => allTok(x.key)).slice(0, 4)) {
+      out.push({ group: 'Famous', html: `<span class="chip sm" style="background:${EF_FILL[t.efnum]};border-color:${EF_LINE[t.efnum]}">${esc(ratingLabel(t))}</span><span class="nm"><b>${esc(t.label)}</b><small>${esc(t.state ?? '')}, ${esc(dayFmt(t.tz).format(Date.parse(t.start_utc)).replace(/^\w+, /, ''))}</small></span>`,
+        run: () => actions.select(t.id) });
     }
     // tornadoes
     const th = tIndex.filter((x) => allTok(x.key)).map((x) => {

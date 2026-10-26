@@ -8,7 +8,7 @@
 
 import { Map as GLMap, LngLatBounds } from '../vendor/maplibre/maplibre-gl.mjs';
 import * as C from './config.js';
-import { num, dayFmt, clockFmt, durText, nameWithState } from './format.js';
+import { num, dayFmt, clockFmt, durText, nameWithState, ratingLabel, trackNotes } from './format.js';
 import { createFilters } from './filters.js';
 import { createTimeline } from './timeline.js';
 import { createDock } from './dock.js';
@@ -21,6 +21,9 @@ const fetchJSON = async (u) => {
   if (!r.ok) throw new Error(`${u}: ${r.status}`);
   return r.json();
 };
+const FAMOUS_GOLD = '#ffd36e';
+// Zoned outlines (separate rating zones) draw at full strength; a single-color envelope is lighter so it never reads as a rating.
+const OUTLINE_OPACITY = ['case', ['==', ['get', 'zoned'], false], 0.5, 0.7];
 const EF_COLOR = ['match', ['get', 'ef'], ...C.EF_FILL.flatMap((c, i) => [i, c]), '#ffffff'];
 const phone = () => matchMedia('(max-width: 760px)').matches;
 
@@ -28,20 +31,28 @@ const phone = () => matchMedia('(max-width: 760px)').matches;
 const CITY_TIERS = [[15000, 8.4], [30000, 7.4], [60000, 6.4], [120000, 5.3], [300000, 4.2], [700000, 3.0]];
 
 async function main() {
-  const [tData, wData, states, outlines, citiesFC] = await Promise.all([
+  const [tData, wData26, states, outlines26, citiesFC, fData, wDataF, outlinesF] = await Promise.all([
     fetchJSON('../data/tornadoes-2026.json'),
     fetchJSON('../data/warnings-2026.json'),
     fetchJSON('../data/states.geojson'),
     fetchJSON('../data/outlines-2026.geojson'),
     fetchJSON('../data/cities.geojson'),
+    fetchJSON('../data/famous.json'),
+    fetchJSON('../data/warnings-famous.json'),
+    fetchJSON('../data/outlines-famous.geojson'),
   ]);
   const all = tData.tornadoes;
+  // The famous ten sit beside the 2026 set. They are never filtered, counted or ranked with it.
+  const famous = [...fData.tornadoes].sort((a, b) => a.start_utc.localeCompare(b.start_utc));
+  const wData = { ...wData26, ...wDataF };
+  const outlines = { type: 'FeatureCollection', features: [...outlines26.features, ...outlinesF.features] };
   const year = tData.meta.year;
   const stateNames = Object.fromEntries(states.features.map((f) => [f.properties.st, f.properties.name]));
   // Outline pieces carry "EF1" style text; the map colors by number, and stronger zones draw on top.
   for (const f of outlines.features) f.properties.ef = Number(String(f.properties.ef).replace('EF', ''));
   outlines.features.sort((a, b) => a.properties.ef - b.properties.ef);
-  const byId = new Map(all.map((t) => [t.id, t]));
+  const byId = new Map([...all, ...famous].map((t) => [t.id, t]));
+  const famousIds = famous.map((t) => t.id);
   const lite = C.LITE;
   const filters = createFilters(all, year);
 
@@ -59,12 +70,30 @@ async function main() {
   // ---- track data -------------------------------------------------------------
   const tracks = {
     type: 'FeatureCollection',
-    features: all.map((t) => ({
+    features: [...all, ...famous].map((t) => ({
       type: 'Feature',
-      properties: { id: t.id, ef: t.efnum, name: t.label, state: t.state },
+      properties: { id: t.id, ef: t.efnum, name: t.label, state: t.state, rl: ratingLabel(t), fam: t.famous ? 1 : 0 },
       geometry: { type: 'LineString', coordinates: t.path.length >= 2 ? t.path : [t.start, t.end] },
     })),
   };
+  // One gold marker per famous tornado, so the ten stand out from the 2026 tracks at every zoom.
+  const midpoint = (t) => t.path[Math.floor(t.path.length / 2)] ?? t.start;
+  const famousPts = {
+    type: 'FeatureCollection',
+    features: famous.map((t) => ({
+      type: 'Feature',
+      properties: { id: t.id, ef: t.efnum, name: t.label, state: t.state, rl: ratingLabel(t), fam: 1, tag: `${t.label.toUpperCase()} ${t.year}` },
+      geometry: { type: 'Point', coordinates: midpoint(t) },
+    })),
+  };
+  // Warning polygons. Which ones draw depends on the toggle and on what is selected.
+  const warnByTornado = new Map();
+  const warnFC = { type: 'FeatureCollection', features: [] };
+  for (const [key, w] of Object.entries(wData)) {
+    if (!w.polygon?.length) continue;
+    warnFC.features.push({ type: 'Feature', properties: { key }, geometry: { type: 'Polygon', coordinates: [w.polygon] } });
+    for (const id of w.tornado_ids ?? []) { if (!warnByTornado.has(id)) warnByTornado.set(id, []); warnByTornado.get(id).push(key); }
+  }
 
   // ---- map ------------------------------------------------------------------------
   const is3d0 = params.get('view') !== 'flat';
@@ -108,6 +137,8 @@ async function main() {
         states: { type: 'geojson', data: states },
         outlines: { type: 'geojson', data: outlines },
         tracks: { type: 'geojson', data: tracks },
+        warnings: { type: 'geojson', data: warnFC },
+        famous: { type: 'geojson', data: famousPts },
         cities: { type: 'geojson', data: citiesFC },
       },
       layers: [
@@ -118,10 +149,17 @@ async function main() {
           paint: { 'fill-color': '#111c27', 'fill-antialias': false } },
         { id: 'state-lines', type: 'line', source: 'states',
           paint: { 'line-color': '#8398ad', 'line-opacity': 0.4, 'line-width': 0.9 } },
+        { id: 'warn-fill', type: 'fill', source: 'warnings', minzoom: 4, layout: { visibility: 'none' },
+          filter: ['==', ['get', 'key'], '__none__'], paint: { 'fill-color': C.WARNING_RED, 'fill-opacity': 0.06, 'fill-antialias': false } },
+        { id: 'warn-line', type: 'line', source: 'warnings', minzoom: 4, layout: { visibility: 'none' },
+          filter: ['==', ['get', 'key'], '__none__'], paint: { 'line-color': C.WARNING_RED, 'line-width': 1.2, 'line-opacity': 0.75 } },
         { id: 'outlines', type: 'fill', source: 'outlines', minzoom: 8.5, layout: { 'fill-sort-key': ['get', 'ef'] },
-          paint: { 'fill-color': EF_COLOR, 'fill-opacity': 0.7, 'fill-antialias': false } },
+          paint: { 'fill-color': EF_COLOR, 'fill-opacity': OUTLINE_OPACITY, 'fill-antialias': false } },
         { id: 'outlines-sel', type: 'fill', source: 'outlines', filter: ['==', ['get', 'tid'], ''], layout: { 'fill-sort-key': ['get', 'ef'] },
           paint: { 'fill-color': EF_COLOR, 'fill-opacity': 0.8, 'fill-antialias': false } },
+        // The selected tornado's own warnings always draw, dashed, whatever the toggle says.
+        { id: 'warn-sel', type: 'line', source: 'warnings', filter: ['==', ['get', 'key'], '__none__'],
+          paint: { 'line-color': C.WARNING_RED, 'line-width': 2, 'line-dasharray': [2, 1.5], 'line-opacity': 0.95 } },
         { id: 'tracks-glow', type: 'line', source: 'tracks', layout: { 'line-cap': 'round', 'line-sort-key': ['get', 'ef'] },
           paint: { 'line-color': EF_COLOR, 'line-width': widthExpr(3.2), 'line-blur': 5, 'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.3, 13, 0.08] } },
         { id: 'tracks-case', type: 'line', source: 'tracks', layout: { 'line-cap': 'round', 'line-sort-key': ['get', 'ef'] },
@@ -129,6 +167,15 @@ async function main() {
         { id: 'tracks-line', type: 'line', source: 'tracks', layout: { 'line-cap': 'round', 'line-join': 'round', 'line-sort-key': ['get', 'ef'] },
           paint: { 'line-color': EF_COLOR, 'line-width': widthExpr(1) } },
         ...cityLayers,
+        { id: 'famous-ring', type: 'circle', source: 'famous', maxzoom: 10.5,
+          paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 3, 7, 8, 12], 'circle-color': 'rgba(0,0,0,0)',
+            'circle-stroke-color': FAMOUS_GOLD, 'circle-stroke-width': 2, 'circle-pitch-alignment': 'map',
+            'circle-stroke-opacity': ['interpolate', ['linear'], ['zoom'], 7.5, 1, 9.5, 0] } },
+        { id: 'famous-label', type: 'symbol', source: 'famous', minzoom: 4.2,
+          layout: { 'text-field': ['get', 'tag'], 'text-font': ['VT323'], 'text-size': ['interpolate', ['linear'], ['zoom'], 4, 15, 9, 19],
+            'text-letter-spacing': 0.1, 'text-anchor': 'top', 'text-offset': [0, 0.9], 'text-padding': 3, 'text-max-width': 12, 'symbol-sort-key': ['-', 0, ['get', 'ef']] },
+          paint: { 'text-color': FAMOUS_GOLD, 'text-halo-color': 'rgba(6,11,16,0.95)', 'text-halo-width': 1.8,
+            'text-opacity': ['interpolate', ['linear'], ['zoom'], 7.5, 1, 9.5, 0] } },
         { id: 'tracks-hover', type: 'line', source: 'tracks', filter: ['==', ['get', 'id'], ''], layout: { 'line-cap': 'round' },
           paint: { 'line-color': '#ffffff', 'line-width': widthExpr(1.9), 'line-opacity': 0.55, 'line-blur': 1 } },
         { id: 'tracks-sel', type: 'line', source: 'tracks', filter: ['==', ['get', 'id'], ''], layout: { 'line-cap': 'round' },
@@ -138,6 +185,8 @@ async function main() {
         // Wide and invisible: makes thin and short tracks easy to hit with a finger or cursor.
         { id: 'tracks-hit', type: 'line', source: 'tracks', layout: { 'line-cap': 'round' },
           paint: { 'line-color': '#000000', 'line-opacity': 0, 'line-width': 18 } },
+        { id: 'famous-hit', type: 'circle', source: 'famous', maxzoom: 10.5,
+          paint: { 'circle-radius': 20, 'circle-color': '#000000', 'circle-opacity': 0 } },
       ],
       sky: {
         'sky-color': '#0e1620', 'horizon-color': '#33414f', 'fog-color': '#0a1118',
@@ -165,14 +214,38 @@ async function main() {
   let applyQueued = false;
   function applyFilters() {
     applyQueued = false;
-    const list = filters.filtered().map((t) => t.id);
+    const list = [...filters.filtered().map((t) => t.id), ...famousIds];
     if (state.selected && !list.includes(state.selected)) list.push(state.selected);
     const f = list.length ? ['in', ['get', 'id'], ['literal', list]] : ['==', ['get', 'id'], '__none__'];
     for (const l of ['tracks-glow', 'tracks-case', 'tracks-line', 'tracks-hit']) map.setFilter(l, f);
     map.setFilter('outlines', list.length ? ['in', ['get', 'tid'], ['literal', list]] : ['==', ['get', 'tid'], '__none__']);
+    applyWarnings();
     updateBrandSub();
   }
   filters.on(() => { if (!applyQueued) { applyQueued = true; requestAnimationFrame(applyFilters); } });
+
+  // ---- warning areas --------------------------------------------------------------------
+  let warnOn = false;
+  function applyWarnings() {
+    const vis = warnOn ? 'visible' : 'none';
+    for (const l of ['warn-fill', 'warn-line']) map.setLayoutProperty(l, 'visibility', vis);
+    if (warnOn) {
+      const keys = new Set();
+      for (const t of filters.filtered()) if (t.warning) keys.add(t.warning.key);
+      for (const t of famous) for (const k of warnByTornado.get(t.id) ?? []) keys.add(k);
+      const f = keys.size ? ['in', ['get', 'key'], ['literal', [...keys]]] : ['==', ['get', 'key'], '__none__'];
+      map.setFilter('warn-fill', f); map.setFilter('warn-line', f);
+    }
+    const sel = state.selected ? (warnByTornado.get(state.selected) ?? []) : [];
+    map.setFilter('warn-sel', sel.length ? ['in', ['get', 'key'], ['literal', sel]] : ['==', ['get', 'key'], '__none__']);
+  }
+  function setWarnings(on) {
+    warnOn = on;
+    $('warnBtn').setAttribute('aria-pressed', String(on));
+    const sw = $('fWarn'); if (sw) sw.setAttribute('aria-pressed', String(on));
+    applyWarnings();
+  }
+  $('warnBtn').addEventListener('click', () => setWarnings(!warnOn));
 
   function fitFiltered(animate = true) {
     let list = filters.filtered();
@@ -243,19 +316,20 @@ async function main() {
   function fillCard(t) {
     const tz = t.tz, start = Date.parse(t.start_utc);
     const chip = $('cChip');
-    chip.textContent = `EF${t.efnum}`;
+    chip.textContent = ratingLabel(t);
     chip.style.background = C.EF_FILL[t.efnum];
     chip.style.borderColor = C.EF_LINE[t.efnum];
+    chip.classList.toggle('fam', !!t.famous);
     $('cName').textContent = t.label;
     $('cSub').textContent = `${t.state ?? ''}${t.state ? ', ' : ''}${dayFmt(tz).format(start)}`;
     const n = t.near;
-    $('cNear').textContent = n ? `About ${num(n.dist_mi, 1)} mi ${n.dir} of ${n.place}, ${n.state}` : '';
+    $('cNear').textContent = n && !t.famous ? `About ${num(n.dist_mi, 1)} mi ${n.dir} of ${n.place}, ${n.state}` : '';
 
     $('cStats').replaceChildren(
       statItem('Path length', `${num(t.length_mi, 1)} mi`),
       statItem('Max width', t.width_yd != null ? `${num(t.width_yd)} yd` : 'not recorded'),
       statItem('Time on the ground', t.playable ? durText(t.duration_min) : 'unreliable'),
-      statItem('Peak wind', t.max_wind_mph ? `${t.max_wind_mph} mph` : 'not recorded'),
+      statItem('Peak wind', t.max_wind_text ?? (t.max_wind_mph ? `${t.max_wind_mph} mph` : 'not recorded')),
       statItem('Began', clockFmt(tz).format(start)),
       statItem('Ended', t.playable ? clockFmt(tz).format(Date.parse(t.end_utc)) : 'unreliable'),
     );
@@ -286,26 +360,39 @@ async function main() {
       if (warning.damage_tag) bits.push(`Damage threat: ${warning.damage_tag.toLowerCase()}`);
       if (warning.emergency) bits.push('Tornado emergency');
       if (t.warning.tornadoes_in_warning > 1) bits.push(`One warning covered ${t.warning.tornadoes_in_warning} surveyed tornadoes`);
+      if (t.famous && t.warning.warnings_on_path > 1) bits.push(`${t.warning.warnings_on_path} tornado warnings touched the path. This is the earliest one that was active when the tornado began; the others are outlined on the map`);
       if (!t.warning.lead_reliable) bits.push('Lead time is uncertain because the survey timing is unreliable');
       if (bits.length) { const c = document.createElement('p'); c.className = 'dim'; c.textContent = bits.join('. ') + '.'; w.append(c); }
     } else {
       w.textContent = 'No tornado warning matched this tornado in the NWS archive.';
     }
 
-    $('cNotes').textContent = t.notes ?? 'No survey notes were entered for this tornado.';
-    $('cNotesWrap').open = false;
+    const noteText = t.famous
+      ? [t.story, t.notes ? `NWS survey comments:\n${t.notes}` : ''].filter(Boolean).join('\n\n')
+      : (t.notes ?? 'No survey notes were entered for this tornado.');
+    $('cNotes').textContent = noteText;
+    $('cNotesWrap').querySelector('summary').textContent = t.famous ? 'About this tornado' : 'NWS survey notes';
+    $('cNotesWrap').open = !!t.famous;
+
+    const cav = [...(t.caveats ?? []), ...trackNotes(t)];
+    $('cCav').replaceChildren(...cav.map((c) => { const li = document.createElement('li'); li.textContent = c; return li; }));
+    $('cCavWrap').hidden = !cav.length;
 
     const watch = $('cWatch');
     if (t.playable) {
       watch.href = `playback.html?id=${encodeURIComponent(t.id)}`;
       watch.removeAttribute('aria-disabled');
-      $('cWatchNote').textContent = 'Opens an overview of the path first. Press play to follow the tornado.';
+      $('cWatchNote').textContent = t.track_kind === 'traced'
+        ? 'Opens an overview of the path first. The path is a hand-traced approximation, so the motion is too.'
+        : 'Opens an overview of the path first. Press play to follow the tornado.';
     } else {
       watch.removeAttribute('href');
       watch.setAttribute('aria-disabled', 'true');
       $('cWatchNote').textContent = `Playback is off for this tornado: ${t.timing_issue}.`;
     }
-    $('cSrc').textContent = `Source: NWS Damage Assessment Toolkit, survey by ${t.wfos?.length ? t.wfos.join(', ') : t.wfo}. Warnings from the Iowa Environmental Mesonet.`;
+    $('cSrc').textContent = t.famous
+      ? `Sources: ${t.track_text} Headline numbers from the NOAA Storm Prediction Center. Times: ${t.time_sources}. Warnings from the Iowa Environmental Mesonet.`
+      : `Source: NWS Damage Assessment Toolkit, survey by ${t.wfos?.length ? t.wfos.join(', ') : t.wfo}. Warnings from the Iowa Environmental Mesonet.`;
     $('card').scrollTop = 0;
   }
 
@@ -319,7 +406,7 @@ async function main() {
     fillCard(t);
     $('card').hidden = false;
     if (phone()) dock.close();
-    applyFilters(); // keep the selected one drawn even if the filters would hide it
+    applyFilters(); // keep the selected one drawn even if the filters would hide it (also refreshes the warning outlines)
     if (fly) flyTo(t);
     const u = new URL(location.href); u.searchParams.set('id', id); history.replaceState(null, '', u);
   }
@@ -340,19 +427,19 @@ async function main() {
   });
 
   // ---- panels, timeline, search ---------------------------------------------------------------
-  const dock = createDock({ all, filters, stateNames, showTip, hideTip, onPick: {
+  const dock = createDock({ all, famous, filters, stateNames, showTip, hideTip, warnings: { get: () => warnOn, set: setWarnings }, onPick: {
     select: (id) => select(id),
     stateChanged: (st) => { if (st) fitFiltered(); },
   } });
   dock.onOpenChange((tab) => { if (tab && phone()) deselect(); });
   createTimeline({ all, filters, showTip, hideTip });
-  createSearch({ all, cities: citiesFC.features, stateNames, filters, actions: {
+  createSearch({ all, famous, cities: citiesFC.features, stateNames, filters, actions: {
     select: (id) => select(id), flyToPlace, fitFiltered: () => { deselect(); fitFiltered(); },
   } });
 
   // ---- pointer interaction ----------------------------------------------------------------------
   function pick(point) {
-    const hits = map.queryRenderedFeatures(point, { layers: ['tracks-hit'] });
+    const hits = map.queryRenderedFeatures(point, { layers: ['famous-hit', 'tracks-hit'] });
     if (!hits.length) return null;
     // Overlapping tracks: prefer the strongest.
     hits.sort((a, b) => b.properties.ef - a.properties.ef);
@@ -364,7 +451,7 @@ async function main() {
     map.getCanvas().style.cursor = p ? 'pointer' : '';
     if (p) {
       if (state.hover !== p.id) { state.hover = p.id; map.setFilter('tracks-hover', ['==', ['get', 'id'], p.id]); }
-      showTip(`<b>EF${p.ef}</b>${nameWithState({ label: p.name, state: p.state })}`, e.originalEvent.clientX, e.originalEvent.clientY);
+      showTip(`<b>${p.rl ?? `EF${p.ef}`}</b>${nameWithState({ label: p.name, state: p.state })}`, e.originalEvent.clientX, e.originalEvent.clientY);
     } else if (state.hover) {
       state.hover = null; map.setFilter('tracks-hover', ['==', ['get', 'id'], '']); hideTip();
     }
