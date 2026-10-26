@@ -1,5 +1,5 @@
 // Twister Chaser main map: every surveyed 2026 tornado on 3D terrain (or a flat overview).
-// Click a track for its details, then Watch to open playback.
+// Filters, timeline, search, top lists and stats all work on the same filter state.
 //
 //   index.html                  3D terrain view
 //   index.html?view=flat        flat overview
@@ -8,6 +8,11 @@
 
 import { Map as GLMap, LngLatBounds } from '../vendor/maplibre/maplibre-gl.mjs';
 import * as C from './config.js';
+import { num, dayFmt, clockFmt, durText, nameWithState } from './format.js';
+import { createFilters } from './filters.js';
+import { createTimeline } from './timeline.js';
+import { createDock } from './dock.js';
+import { createSearch } from './search.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -16,42 +21,40 @@ const fetchJSON = async (u) => {
   if (!r.ok) throw new Error(`${u}: ${r.status}`);
   return r.json();
 };
-const EMPTY = { type: 'FeatureCollection', features: [] };
 const EF_COLOR = ['match', ['get', 'ef'], ...C.EF_FILL.flatMap((c, i) => [i, c]), '#ffffff'];
-const EF_EDGE = ['match', ['get', 'ef'], ...C.EF_LINE.flatMap((c, i) => [i, c]), '#ffffff'];
-const phone = () => matchMedia('(max-width: 720px)').matches;
+const phone = () => matchMedia('(max-width: 760px)').matches;
 
-const num = (v, d = 0) => v.toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
-const dayFmt = (tz) => new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-const clockFmt = (tz) => new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
-function durText(min) {
-  const m = Math.round(min);
-  return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
-}
+// City label tiers: [minimum population, first zoom it appears at]. Bigger cities appear earlier and win collisions.
+const CITY_TIERS = [[15000, 8.4], [30000, 7.4], [60000, 6.4], [120000, 5.3], [300000, 4.2], [700000, 3.0]];
 
 async function main() {
-  const [tData, wData, states, outlines] = await Promise.all([
+  const [tData, wData, states, outlines, citiesFC] = await Promise.all([
     fetchJSON('../data/tornadoes-2026.json'),
     fetchJSON('../data/warnings-2026.json'),
     fetchJSON('../data/states.geojson'),
     fetchJSON('../data/outlines-2026.geojson'),
+    fetchJSON('../data/cities.geojson'),
   ]);
   const all = tData.tornadoes;
+  const year = tData.meta.year;
+  const stateNames = Object.fromEntries(states.features.map((f) => [f.properties.st, f.properties.name]));
   // Outline pieces carry "EF1" style text; the map colors by number, and stronger zones draw on top.
   for (const f of outlines.features) f.properties.ef = Number(String(f.properties.ef).replace('EF', ''));
   outlines.features.sort((a, b) => a.properties.ef - b.properties.ef);
   const byId = new Map(all.map((t) => [t.id, t]));
   const lite = C.LITE;
+  const filters = createFilters(all, year);
 
   // ---- header + legend -----------------------------------------------------
   const updated = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/Chicago' })
     .format(Date.parse(tData.meta.source_fetched_utc));
-  $('brandSub').textContent = `${num(all.length)} surveyed tornadoes in ${tData.meta.year}. Updated ${updated}.`;
-  const counts = [0, 0, 0, 0, 0, 0];
-  for (const t of all) counts[t.efnum]++;
-  $('legend').innerHTML = counts
-    .map((n, i) => `<li><i style="background:${C.EF_FILL[i]};border-color:${C.EF_LINE[i]}"></i><b>EF${i}</b><span>${num(n)}</span></li>`)
-    .join('');
+  $('legend').innerHTML = C.EF_FILL.map((c, i) => `<li><i style="background:${c};border-color:${C.EF_LINE[i]}"></i>EF${i}</li>`).join('');
+  function updateBrandSub() {
+    const n = filters.filtered().length;
+    $('brandSub').textContent = filters.isDefault()
+      ? `${num(all.length)} surveyed tornadoes in ${year}. Updated ${updated}.`
+      : `Showing ${num(n)} of ${num(all.length)} tornadoes. Updated ${updated}.`;
+  }
 
   // ---- track data -------------------------------------------------------------
   const tracks = {
@@ -62,9 +65,6 @@ async function main() {
       geometry: { type: 'LineString', coordinates: t.path.length >= 2 ? t.path : [t.start, t.end] },
     })),
   };
-  // A single bounding box for the whole country view.
-  const all48 = new LngLatBounds();
-  for (const t of all) all48.extend(t.start).extend(t.end);
 
   // ---- map ------------------------------------------------------------------------
   const is3d0 = params.get('view') !== 'flat';
@@ -75,21 +75,40 @@ async function main() {
     // Zoomed in, thin the lines so the real damage swath underneath shows.
     14, ['*', 1.2 * k, 1]];
 
+  const cityLayers = CITY_TIERS.map(([min, minzoom], k) => {
+    const next = CITY_TIERS[k + 1]?.[0] ?? 1e12;
+    const s = 9 + k * 1.3; // base size grows with tier
+    return {
+      id: `cities-${k}`, type: 'symbol', source: 'cities', minzoom,
+      filter: ['all', ['>=', ['get', 'pop'], min], ['<', ['get', 'pop'], next]],
+      layout: {
+        'text-field': ['get', 'name'], 'text-font': ['BigShouldersBlack'], 'text-transform': 'uppercase',
+        'text-size': ['interpolate', ['linear'], ['zoom'], 3, s, 8, s + 3, 12, s + 6],
+        'text-letter-spacing': 0.07, 'text-padding': 4, 'text-max-width': 8,
+        'symbol-sort-key': ['*', -1, ['get', 'pop']],
+      },
+      paint: { 'text-color': '#e6eef6', 'text-halo-color': 'rgba(6,11,16,0.95)', 'text-halo-width': 1.8, 'text-halo-blur': 0.4, 'text-opacity': 0.94 },
+    };
+  });
+
   const map = new GLMap({
     container: 'map',
-    center: [-96, 38], zoom: 3.4, pitch: is3d0 ? 48 : 0, maxPitch: 78, minZoom: 2.2,
+    center: [-96, 38], zoom: 3.4, pitch: is3d0 ? 48 : 0,
+    minZoom: 2, maxZoom: 18, maxPitch: 85, renderWorldCopies: false,
     attributionControl: { compact: true, customAttribution: C.ATTRIBUTION },
     pixelRatio: Math.min(window.devicePixelRatio || 1, lite ? 1.5 : 2),
     fadeDuration: 0,
     style: {
       version: 8,
       projection: { type: 'mercator' },
+      glyphs: `${new URL('glyphs/', document.baseURI).href}{fontstack}/{range}.pbf`,
       sources: {
         dem: { type: 'raster-dem', tiles: [C.DEM_TILES], encoding: 'terrarium', tileSize: 256, maxzoom: lite ? 10 : 12 },
         imagery: { type: 'raster', tiles: [C.IMAGERY_TILES], tileSize: 256, maxzoom: 16 },
         states: { type: 'geojson', data: states },
         outlines: { type: 'geojson', data: outlines },
         tracks: { type: 'geojson', data: tracks },
+        cities: { type: 'geojson', data: citiesFC },
       },
       layers: [
         { id: 'bg', type: 'background', paint: { 'background-color': '#0a1118' } },
@@ -109,6 +128,7 @@ async function main() {
           paint: { 'line-color': '#060b10', 'line-width': widthExpr(1.5), 'line-opacity': 0.75 } },
         { id: 'tracks-line', type: 'line', source: 'tracks', layout: { 'line-cap': 'round', 'line-join': 'round', 'line-sort-key': ['get', 'ef'] },
           paint: { 'line-color': EF_COLOR, 'line-width': widthExpr(1) } },
+        ...cityLayers,
         { id: 'tracks-hover', type: 'line', source: 'tracks', filter: ['==', ['get', 'id'], ''], layout: { 'line-cap': 'round' },
           paint: { 'line-color': '#ffffff', 'line-width': widthExpr(1.9), 'line-opacity': 0.55, 'line-blur': 1 } },
         { id: 'tracks-sel', type: 'line', source: 'tracks', filter: ['==', ['get', 'id'], ''], layout: { 'line-cap': 'round' },
@@ -127,11 +147,41 @@ async function main() {
     },
   });
 
-  const sidePad = () => (phone()
-    ? { top: 96, bottom: Math.round(innerHeight * 0.56) + 20, left: 20, right: 20 }
-    : { top: 90, bottom: 70, left: 70, right: 430 });
-
   const state = { view: is3d0 ? '3d' : 'flat', selected: null, hover: null };
+  const tip = $('tip');
+  const showTip = (html, x, y) => { tip.innerHTML = html; tip.style.left = `${x}px`; tip.style.top = `${y}px`; tip.hidden = false; };
+  const hideTip = () => { tip.hidden = true; };
+  const tlH = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tl-h')) || 150;
+
+  // Room taken by the panels, so a flight never ends underneath one.
+  const fitPad = () => (phone()
+    ? { top: 110, bottom: tlH() + 34, left: 16, right: 16 }
+    : { top: 80, bottom: tlH() + 90, left: 390, right: 60 });
+  const selPad = () => (phone()
+    ? { top: 110, bottom: Math.round(innerHeight * 0.46) + tlH() + 40, left: 16, right: 16 }
+    : { top: 90, bottom: tlH() + 90, left: 390, right: 430 });
+
+  // ---- filters drive the map ---------------------------------------------------------
+  let applyQueued = false;
+  function applyFilters() {
+    applyQueued = false;
+    const list = filters.filtered().map((t) => t.id);
+    if (state.selected && !list.includes(state.selected)) list.push(state.selected);
+    const f = list.length ? ['in', ['get', 'id'], ['literal', list]] : ['==', ['get', 'id'], '__none__'];
+    for (const l of ['tracks-glow', 'tracks-case', 'tracks-line', 'tracks-hit']) map.setFilter(l, f);
+    map.setFilter('outlines', list.length ? ['in', ['get', 'tid'], ['literal', list]] : ['==', ['get', 'tid'], '__none__']);
+    updateBrandSub();
+  }
+  filters.on(() => { if (!applyQueued) { applyQueued = true; requestAnimationFrame(applyFilters); } });
+
+  function fitFiltered(animate = true) {
+    let list = filters.filtered();
+    if (!list.length) list = all;
+    const b = new LngLatBounds();
+    for (const t of list) { b.extend(t.start); b.extend(t.end); }
+    const three = state.view === '3d';
+    map.fitBounds(b, { padding: fitPad(), pitch: three ? 48 : 0, bearing: 0, maxZoom: 10, duration: animate ? 1500 : 0, essential: true });
+  }
 
   // ---- view switching ----------------------------------------------------------------
   function applyView(view, animate = true) {
@@ -144,12 +194,24 @@ async function main() {
     map.setTerrain(three ? { source: 'dem', exaggeration: 1.4 } : null);
     const t = state.selected && byId.get(state.selected);
     if (t) flyTo(t, animate);
-    else map.easeTo({ pitch: three ? 48 : 0, bearing: 0, duration: animate ? 1100 : 0 });
+    else map.easeTo({ pitch: three ? 48 : 0, duration: animate ? 1100 : 0 });
     const u = new URL(location.href);
     if (three) u.searchParams.delete('view'); else u.searchParams.set('view', 'flat');
     history.replaceState(null, '', u);
   }
   for (const b of document.querySelectorAll('#viewToggle button')) b.addEventListener('click', () => applyView(b.dataset.view));
+
+  // ---- map controls -----------------------------------------------------------------------
+  $('zoomIn').addEventListener('click', () => map.zoomIn({ duration: 350 }));
+  $('zoomOut').addEventListener('click', () => map.zoomOut({ duration: 350 }));
+  $('resetView').addEventListener('click', () => map.easeTo({ bearing: 0, pitch: state.view === '3d' ? (state.selected ? 55 : 48) : 0, duration: 700 }));
+  $('fitAll').addEventListener('click', () => { deselect(); fitFiltered(); });
+  map.on('rotate', () => { $('compass').style.transform = `rotate(${-map.getBearing()}deg)`; });
+  const help = $('help'), helpBtn = $('helpBtn');
+  helpBtn.addEventListener('click', () => { help.hidden = !help.hidden; helpBtn.setAttribute('aria-expanded', String(!help.hidden)); });
+  document.addEventListener('pointerdown', (e) => {
+    if (!help.hidden && !e.target.closest('#help, #helpBtn')) { help.hidden = true; helpBtn.setAttribute('aria-expanded', 'false'); }
+  });
 
   // ---- fly to a tornado ----------------------------------------------------------------
   function heading(t) {
@@ -164,7 +226,10 @@ async function main() {
     const three = state.view === '3d';
     // Look across the path so the tornado travels left to right on screen.
     const bearing = three ? ((heading(t) - 90 + 360) % 360) : 0;
-    map.fitBounds(b, { padding: sidePad(), pitch: three ? 55 : 0, bearing, maxZoom: 12.5, duration: animate ? 1700 : 0, essential: true });
+    map.fitBounds(b, { padding: selPad(), pitch: three ? 55 : 0, bearing, maxZoom: 12.5, duration: animate ? 1700 : 0, essential: true });
+  }
+  function flyToPlace(lon, lat) {
+    map.flyTo({ center: [lon, lat], zoom: 9.6, pitch: state.view === '3d' ? 55 : 0, bearing: 0, duration: 1800, essential: true });
   }
 
   // ---- detail card ------------------------------------------------------------------------
@@ -186,8 +251,7 @@ async function main() {
     const n = t.near;
     $('cNear').textContent = n ? `About ${num(n.dist_mi, 1)} mi ${n.dir} of ${n.place}, ${n.state}` : '';
 
-    const stats = $('cStats');
-    stats.replaceChildren(
+    $('cStats').replaceChildren(
       statItem('Path length', `${num(t.length_mi, 1)} mi`),
       statItem('Max width', t.width_yd != null ? `${num(t.width_yd)} yd` : 'not recorded'),
       statItem('Time on the ground', t.playable ? durText(t.duration_min) : 'unreliable'),
@@ -254,43 +318,58 @@ async function main() {
     map.setFilter('outlines-sel', ['==', ['get', 'tid'], id]);
     fillCard(t);
     $('card').hidden = false;
+    if (phone()) dock.close();
+    applyFilters(); // keep the selected one drawn even if the filters would hide it
     if (fly) flyTo(t);
     const u = new URL(location.href); u.searchParams.set('id', id); history.replaceState(null, '', u);
   }
   function deselect() {
+    if (!state.selected) return;
     state.selected = null;
     for (const l of ['tracks-sel', 'tracks-sel-fill']) map.setFilter(l, ['==', ['get', 'id'], '']);
     map.setFilter('outlines-sel', ['==', ['get', 'tid'], '']);
     $('card').hidden = true;
+    applyFilters();
     const u = new URL(location.href); u.searchParams.delete('id'); history.replaceState(null, '', u);
   }
   $('cardClose').addEventListener('click', deselect);
-  addEventListener('keydown', (e) => { if (e.key === 'Escape' && state.selected) deselect(); });
+  addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || e.target.matches?.('input, select')) return;
+    if (!help.hidden) { help.hidden = true; helpBtn.setAttribute('aria-expanded', 'false'); }
+    else if (state.selected) deselect();
+  });
+
+  // ---- panels, timeline, search ---------------------------------------------------------------
+  const dock = createDock({ all, filters, stateNames, showTip, hideTip, onPick: {
+    select: (id) => select(id),
+    stateChanged: (st) => { if (st) fitFiltered(); },
+  } });
+  dock.onOpenChange((tab) => { if (tab && phone()) deselect(); });
+  createTimeline({ all, filters, showTip, hideTip });
+  createSearch({ all, cities: citiesFC.features, stateNames, filters, actions: {
+    select: (id) => select(id), flyToPlace, fitFiltered: () => { deselect(); fitFiltered(); },
+  } });
 
   // ---- pointer interaction ----------------------------------------------------------------------
   function pick(point) {
     const hits = map.queryRenderedFeatures(point, { layers: ['tracks-hit'] });
     if (!hits.length) return null;
-    // Overlapping tracks: prefer the strongest, then whatever is already selected.
+    // Overlapping tracks: prefer the strongest.
     hits.sort((a, b) => b.properties.ef - a.properties.ef);
     return hits[0].properties;
   }
-  const tip = $('tip');
   map.on('mousemove', (e) => {
     if (e.originalEvent?.pointerType === 'touch') return;
     const p = pick(e.point);
     map.getCanvas().style.cursor = p ? 'pointer' : '';
     if (p) {
       if (state.hover !== p.id) { state.hover = p.id; map.setFilter('tracks-hover', ['==', ['get', 'id'], p.id]); }
-      tip.innerHTML = `<b style="color:${C.EF_FILL[p.ef]}">EF${p.ef}</b>${p.name}${p.state ? ', ' + p.state : ''}`;
-      tip.style.left = `${e.originalEvent.clientX}px`;
-      tip.style.top = `${e.originalEvent.clientY}px`;
-      tip.hidden = false;
+      showTip(`<b>EF${p.ef}</b>${nameWithState({ label: p.name, state: p.state })}`, e.originalEvent.clientX, e.originalEvent.clientY);
     } else if (state.hover) {
-      state.hover = null; map.setFilter('tracks-hover', ['==', ['get', 'id'], '']); tip.hidden = true;
+      state.hover = null; map.setFilter('tracks-hover', ['==', ['get', 'id'], '']); hideTip();
     }
   });
-  map.on('mouseout', () => { tip.hidden = true; });
+  map.on('mouseout', hideTip);
   map.on('click', (e) => {
     const p = pick(e.point);
     if (p) select(p.id); else if (state.selected) deselect();
@@ -298,13 +377,15 @@ async function main() {
 
   // ---- start ------------------------------------------------------------------------------------------
   await new Promise((res) => map.once('load', res));
-  map.fitBounds(all48, { padding: { top: 100, bottom: 40, left: 20, right: 20 }, pitch: state.view === '3d' ? 48 : 0, duration: 0 });
+  updateBrandSub();
+  fitFiltered(false);
   applyView(state.view, false);
   await Promise.race([new Promise((res) => map.once('idle', res)), new Promise((res) => setTimeout(res, 25000))]);
   $('loading').hidden = true;
+  if (!phone()) dock.open('filters');
   if (params.has('id') && byId.has(params.get('id'))) select(params.get('id'));
 
-  window.tc = { map, state, select, deselect, applyView, byId, all };
+  window.tc = { map, state, select, deselect, applyView, byId, all, filters, dock, fitFiltered };
   window.tcReady = true;
 }
 

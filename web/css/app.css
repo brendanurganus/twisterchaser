@@ -1,8 +1,15 @@
+/* Display face: Big Shoulders Display (SIL Open Font License, see fonts/OFL-LICENSE.txt). */
+@font-face { font-family: "Big Shoulders"; font-weight: 900; font-style: normal; font-display: swap;
+  src: url("../fonts/big-shoulders-display-latin-900-normal.woff2") format("woff2"); }
+@font-face { font-family: "Big Shoulders"; font-weight: 800; font-style: normal; font-display: swap;
+  src: url("../fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); }
+
 /* Twister Chaser: storm-center dark theme.
    Base is blue-black, text is cool white, interactive things are ice blue,
    and NWS warning red appears only on warning content (the scrub-bar band is the one loud element). */
 
 :root {
+  --display: "Big Shoulders", "Bahnschrift", "Arial Narrow", Impact, sans-serif;
   --base: #0a1118;
   --panel: rgba(12, 20, 29, 0.78);
   --panel-edge: rgba(143, 200, 240, 0.16);
@@ -205,4 +212,17 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ice); outli
   #elapsed { font-size: 12.5px; }
   .tr-row { gap: 6px; }
   .tags { display: none; }
+}
+
+/* ---- headings: heavy condensed, all caps ---------------------------------------- */
+h1, h2, h3, .display {
+  font-family: var(--display); font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.ro-title h1 { font-size: 29px; line-height: 0.98; letter-spacing: 0.03em; }
+.ro-title p { margin-top: 4px; }
+#more h2 { font-size: 20px; letter-spacing: 0.06em; margin: 16px 0 6px; color: var(--ice); }
+.chip { font-family: var(--display); font-size: 24px; font-weight: 900; letter-spacing: 0.02em; line-height: 1; padding: 8px 8px 7px; }
+@media (max-width: 720px) {
+  .ro-title h1 { font-size: 22px; }
+  .chip { font-size: 20px; min-width: 46px; }
 }
