@@ -1,15 +1,15 @@
-/* Display face: Big Shoulders Display (SIL Open Font License, see fonts/OFL-LICENSE.txt). */
-@font-face { font-family: "Big Shoulders"; font-weight: 900; font-style: normal; font-display: swap;
-  src: url("../fonts/big-shoulders-display-latin-900-normal.woff2") format("woff2"); }
-@font-face { font-family: "Big Shoulders"; font-weight: 800; font-style: normal; font-display: swap;
-  src: url("../fonts/big-shoulders-display-latin-800-normal.woff2") format("woff2"); }
+/* Display face: VT323 (SIL Open Font License, see fonts/OFL-LICENSE-VT323.txt).
+   A thin pixel capital face in the spirit of broadcast character generators. It has one weight, so the
+   range below stops browsers from faking a bolder one. */
+@font-face { font-family: "VT323"; font-weight: 400 900; font-style: normal; font-display: swap;
+  src: url("../fonts/vt323-latin-400-normal.woff2") format("woff2"); }
 
 /* Twister Chaser: storm-center dark theme.
    Base is blue-black, text is cool white, interactive things are ice blue,
    and NWS warning red appears only on warning content (the scrub-bar band is the one loud element). */
 
 :root {
-  --display: "Big Shoulders", "Bahnschrift", "Arial Narrow", Impact, sans-serif;
+  --display: "VT323", "Courier New", monospace;
   --base: #0a1118;
   --panel: rgba(12, 20, 29, 0.78);
   --panel-edge: rgba(143, 200, 240, 0.16);
@@ -216,12 +216,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ice); outli
 
 /* ---- headings: heavy condensed, all caps ---------------------------------------- */
 h1, h2, h3, .display {
-  font-family: var(--display); font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em;
+  font-family: var(--display); font-weight: 400; text-transform: uppercase; letter-spacing: 0.1em;
 }
-.ro-title h1 { font-size: 29px; line-height: 0.98; letter-spacing: 0.03em; }
+.ro-title h1 { font-size: 30px; line-height: 0.95; letter-spacing: 0.08em; }
 .ro-title p { margin-top: 4px; }
-#more h2 { font-size: 20px; letter-spacing: 0.06em; margin: 16px 0 6px; color: var(--ice); }
-.chip { font-family: var(--display); font-size: 24px; font-weight: 900; letter-spacing: 0.02em; line-height: 1; padding: 8px 8px 7px; }
+#more h2 { font-size: 23px; letter-spacing: 0.1em; margin: 16px 0 6px; color: var(--ice); }
+.chip { font-family: var(--display); font-size: 28px; font-weight: 900; letter-spacing: 0.02em; line-height: 1; padding: 8px 8px 7px; }
 @media (max-width: 720px) {
   .ro-title h1 { font-size: 22px; }
   .chip { font-size: 20px; min-width: 46px; }

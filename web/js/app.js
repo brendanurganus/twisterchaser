@@ -77,14 +77,14 @@ async function main() {
 
   const cityLayers = CITY_TIERS.map(([min, minzoom], k) => {
     const next = CITY_TIERS[k + 1]?.[0] ?? 1e12;
-    const s = 9 + k * 1.3; // base size grows with tier
+    const s = 13 + k * 1.8; // base size grows with tier
     return {
       id: `cities-${k}`, type: 'symbol', source: 'cities', minzoom,
       filter: ['all', ['>=', ['get', 'pop'], min], ['<', ['get', 'pop'], next]],
       layout: {
-        'text-field': ['get', 'name'], 'text-font': ['BigShouldersBlack'], 'text-transform': 'uppercase',
+        'text-field': ['get', 'name'], 'text-font': ['VT323'], 'text-transform': 'uppercase',
         'text-size': ['interpolate', ['linear'], ['zoom'], 3, s, 8, s + 3, 12, s + 6],
-        'text-letter-spacing': 0.07, 'text-padding': 4, 'text-max-width': 8,
+        'text-letter-spacing': 0.12, 'text-padding': 4, 'text-max-width': 8,
         'symbol-sort-key': ['*', -1, ['get', 'pop']],
       },
       paint: { 'text-color': '#e6eef6', 'text-halo-color': 'rgba(6,11,16,0.95)', 'text-halo-width': 1.8, 'text-halo-blur': 0.4, 'text-opacity': 0.94 },
