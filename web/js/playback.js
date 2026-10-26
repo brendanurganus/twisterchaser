@@ -34,6 +34,7 @@ async function main() {
     : all.find((x) => /Kankakee - Roselawn/.test(x.name ?? ''));
   if (!t) throw new Error('Tornado not found');
   const warning = t.warning ? wData[t.warning.key] : null;
+  document.getElementById('backToMap').href = `index.html?id=${encodeURIComponent(t.id)}`;
 
   const frame = new Frame(t.path[0][0], t.path[0][1]);
   const track = new Track(frame, t.path);

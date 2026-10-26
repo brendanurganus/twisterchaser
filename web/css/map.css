@@ -1,0 +1,77 @@
+/* Main map page. Tokens and shared parts (panel, chip, primary, link) come from app.css. */
+
+#brand {
+  top: var(--gutter); left: var(--gutter); z-index: 10; padding: 12px 16px 12px; max-width: 360px;
+}
+#brand h1 { font-size: 21px; font-weight: 700; letter-spacing: 0.01em; line-height: 1.1; }
+#brandSub { color: var(--haze); font-size: 13.5px; margin-top: 3px; }
+.legend { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.legend li { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid; display: block; }
+.legend b { font-weight: 600; }
+.legend span { color: var(--haze); }
+
+#viewToggle {
+  top: var(--gutter); right: var(--gutter); z-index: 11; display: flex; gap: 4px; padding: 5px;
+}
+#viewToggle button {
+  font: inherit; font-size: 13.5px; color: var(--text); background: transparent; cursor: pointer;
+  border: 1px solid transparent; border-radius: 5px; padding: 7px 12px;
+}
+#viewToggle button[aria-pressed="true"] { background: var(--ice-dim); border-color: var(--ice); color: #fff; }
+
+#tip {
+  position: fixed; z-index: 20; pointer-events: none; padding: 5px 9px; border-radius: 5px; font-size: 13px;
+  background: rgba(8, 14, 21, 0.92); border: 1px solid var(--panel-edge); white-space: nowrap;
+  transform: translate(14px, 14px);
+}
+#tip b { font-weight: 700; margin-right: 6px; }
+
+/* Detail card */
+#card {
+  top: 68px; right: var(--gutter); z-index: 10; width: 370px; max-width: calc(100vw - 2 * var(--gutter));
+  max-height: calc(100vh - 68px - var(--gutter)); overflow: auto; padding: 14px 16px 16px;
+}
+#card .close {
+  position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; display: grid; place-items: center;
+  background: transparent; color: var(--haze); border: 0; border-radius: 50%; cursor: pointer;
+}
+#card .close:hover { color: var(--text); background: var(--ice-dim); }
+#card .ro-head { padding-right: 30px; }
+#cNear { margin-top: 10px; }
+.card-stats { grid-template-columns: 1fr 1fr; margin-top: 12px; }
+#card h3 { font-size: 13px; font-weight: 600; color: var(--haze); margin: 16px 0 5px; }
+#card p + p { margin-top: 4px; }
+#cWarn .lead { font-weight: 600; }
+#cWarn .lead.good { color: var(--good); }
+#cWarn .lead.late { color: var(--warn); }
+#cNotesWrap { margin-top: 14px; }
+#cNotesWrap summary { cursor: pointer; color: var(--ice); font-size: 13.5px; }
+#cNotesWrap pre {
+  margin-top: 8px; font-family: var(--mono); font-size: 12px; line-height: 1.5; color: #c4d2de; white-space: pre-wrap;
+  max-height: 220px; overflow: auto; background: rgba(0, 0, 0, 0.25); padding: 10px; border-radius: 6px;
+}
+.actions {
+  position: sticky; bottom: -16px; z-index: 2; margin: 16px -16px 0; padding: 10px 16px 8px;
+  background: linear-gradient(to bottom, rgba(12, 20, 29, 0.0), rgba(12, 20, 29, 0.98) 6px);
+}
+a.primary { display: inline-block; text-decoration: none; }
+a.primary[aria-disabled="true"] { background: #2a3744; color: var(--haze); pointer-events: none; }
+.actions .dim { margin-top: 8px; }
+.src { margin-top: 14px; color: var(--haze); font-size: 12px; }
+
+@media (max-width: 720px) {
+  #brand { max-width: calc(100vw - 2 * var(--gutter) - 128px); padding: 9px 12px; }
+  #brand h1 { font-size: 17px; }
+  #brandSub { display: none; }
+  .legend { margin-top: 6px; gap: 3px 9px; }
+  .legend li { font-size: 12px; }
+  .legend span { display: none; }
+  #viewToggle { flex-direction: column; padding: 4px; }
+  #viewToggle button { padding: 6px 9px; font-size: 12.5px; }
+  .actions { bottom: -14px; margin: 14px -14px 0; padding: 10px 14px 8px; }
+  #card {
+    top: auto; left: var(--gutter); right: var(--gutter); bottom: 10px; width: auto;
+    max-height: 56vh; padding: 12px 14px 14px;
+  }
+}
