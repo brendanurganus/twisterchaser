@@ -44,6 +44,10 @@ The cleaning rules and counts are written to `docs/data-report.md` on every buil
 
 One-time setup: **Settings > Pages > Build and deployment > Source: GitHub Actions**. When the year changes, update `DATA_YEAR` in the workflow and the year-named data files.
 
+## Lite edition (Claude artifact)
+
+`lite/template.html` plus `scripts/build_lite.py` produce one self-contained HTML file (`lite/dist/`, not committed) for use as a Claude artifact. Artifacts cannot fetch files or load map tiles, so the lite edition draws a flat map on a canvas with the data embedded: filters, search, the famous ten, warning lead times and a top-down playback. Terrain, the 3D funnel and real damage outlines are only in the full site. Run `python3 scripts/build_lite.py` after the data builds.
+
 ## Credits
 
 MapLibre GL JS (BSD-3), three.js (MIT), VT323 by Peter Hull (SIL OFL). Full list on the about page.

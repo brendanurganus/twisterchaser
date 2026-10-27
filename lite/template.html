@@ -1,0 +1,630 @@
+<title>Twister Chaser Lite</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+<style>
+/* Storm-center dark: one deliberate look. Blue-black ground, cool white text, ice-blue controls,
+   SPC EF colors for ratings, NWS red only for warnings, gold only for the famous ten.
+   Layout: a side panel with search, filters, lists and cards beside a flat canvas map; stacked on phones. */
+:root {
+  --bg: #0a1118; --panel: #0e1822; --panel-2: #132130; --edge: rgba(143, 200, 240, 0.16);
+  --text: #dce8f2; --haze: #8d9fb2; --ice: #8fc8f0; --ice-dim: rgba(143, 200, 240, 0.16);
+  --warn: #e0453a; --good: #7fd6a4; --gold: #ffd36e; --land: #0e1b27;
+  --display: "VT323", "Courier New", monospace;
+  --font: "Bahnschrift", "Barlow Semi Condensed", "Roboto Condensed", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--text); font: 15px/1.4 var(--font); font-variant-numeric: tabular-nums;
+  padding-left: max(0px, env(safe-area-inset-left, 0px)); padding-right: max(0px, env(safe-area-inset-right, 0px));
+}
+h1, h2, h3, p, ul, ol, dl, dd { margin: 0; padding: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: var(--ice); }
+:focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; }
+
+#app { display: grid; grid-template-columns: minmax(300px, 360px) 1fr; height: 100%; min-height: 640px; }
+#side { display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-right: 1px solid var(--edge); }
+#stage { position: relative; min-width: 0; min-height: 0; background: #070c11; overflow: hidden; touch-action: none; }
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+#cv.drag { cursor: grabbing; }
+
+#brand { padding: 16px max(16px, env(safe-area-inset-left, 0px)) 10px 16px; }
+#brand h1 { font: 400 36px/0.95 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: #fff; }
+#brand h1 small { display: inline-block; font-size: 20px; letter-spacing: 0.14em; color: var(--gold); margin-left: 8px; }
+#sub { margin-top: 6px; color: var(--haze); font-size: 13px; }
+#full { display: inline-block; margin-top: 8px; font-size: 13px; }
+.legend { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 10px; }
+.legend li { display: flex; align-items: center; gap: 5px; font: 400 18px/1 var(--display); letter-spacing: 0.04em; }
+.legend i { width: 11px; height: 11px; border-radius: 2px; border: 1.5px solid; display: block; }
+
+#searchWrap { padding: 0 16px 10px; position: relative; }
+#search { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--edge); border-radius: 7px; padding: 9px 12px; font: inherit; }
+#search::placeholder { color: var(--haze); }
+#results { position: absolute; left: 16px; right: 16px; top: 100%; margin-top: -6px; z-index: 5; list-style: none; background: var(--panel-2); border: 1px solid var(--edge); border-radius: 8px; max-height: 300px; overflow: auto; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+#results button { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; background: transparent; border: 0; padding: 8px 10px; }
+#results button:hover, #results button:focus-visible { background: var(--ice-dim); }
+#results .none { padding: 10px; color: var(--haze); font-size: 13px; }
+
+#tabs { display: flex; border-top: 1px solid var(--edge); border-bottom: 1px solid var(--edge); }
+#tabs button { flex: 1; background: transparent; border: 0; border-bottom: 3px solid transparent; color: var(--haze); font: 400 21px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; padding: 9px 2px 6px; }
+#tabs button[aria-selected="true"] { color: #fff; border-bottom-color: var(--ice); }
+#body { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 16px 18px; }
+#body h2 { font: 400 22px/1 var(--display); letter-spacing: 0.1em; color: var(--ice); text-transform: uppercase; margin: 16px 0 7px; }
+.dim { color: var(--haze); font-size: 13px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; background: var(--bg); border: 1.5px solid var(--edge); border-radius: 6px; padding: 5px 9px; font-size: 13px; }
+.chip b { font: 400 19px/1 var(--display); letter-spacing: 0.04em; }
+.chip i { width: 10px; height: 10px; border-radius: 2px; border: 1.5px solid; }
+.chip[aria-pressed="true"] { background: var(--ice-dim); border-color: var(--ice); }
+.chip[aria-pressed="false"] { opacity: 0.6; }
+.chip span { color: var(--haze); }
+.switch { display: flex; align-items: center; gap: 10px; background: transparent; border: 0; padding: 6px 0; text-align: left; }
+.switch i { flex: none; width: 34px; height: 18px; border-radius: 9px; background: #26323f; border: 1.5px solid var(--edge); position: relative; }
+.switch i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: var(--haze); transition: transform 0.15s; }
+.switch[aria-pressed="true"] i { background: var(--ice-dim); border-color: var(--ice); }
+.switch[aria-pressed="true"] i::after { transform: translateX(16px); background: var(--ice); }
+.link { background: none; border: 0; color: var(--ice); padding: 0; text-decoration: underline; font-size: 13px; }
+
+.rows { list-style: none; margin-top: 6px; }
+.rows button { width: 100%; display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: center; text-align: left; background: transparent; border: 0; border-radius: 6px; padding: 7px 4px; }
+.rows button:hover { background: var(--ice-dim); }
+.rows .nm { font-weight: 600; line-height: 1.15; min-width: 0; }
+.rows small { display: block; color: var(--haze); font-weight: 400; font-size: 12px; margin-top: 1px; }
+.rows .val { font-weight: 600; font-size: 14px; white-space: nowrap; }
+.rows em { font-style: normal; color: var(--gold); }
+.tag { display: inline-block; min-width: 44px; text-align: center; font: 400 18px/1 var(--display); letter-spacing: 0.04em; color: #111; padding: 4px 4px 3px; border: 1.5px solid; border-radius: 5px; }
+.seg { display: flex; gap: 4px; margin-top: 4px; }
+.seg button { flex: 1; background: var(--bg); border: 1px solid var(--edge); border-radius: 6px; padding: 6px 4px; font-size: 13px; }
+.seg button[aria-pressed="true"] { background: var(--ice-dim); border-color: var(--ice); }
+
+/* card */
+#card .top { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
+#card .tag { font-size: 26px; padding: 6px 8px 4px; min-width: 56px; }
+#card h2 { margin: 0; font-size: 28px; color: #fff; }
+#card .back { margin-top: 12px; }
+dl.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin-top: 14px; }
+dl.stats dt { color: var(--haze); font-size: 12px; }
+dl.stats dd { font-weight: 600; font-size: 15px; }
+#card h3 { font: 400 20px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ice); margin: 16px 0 5px; }
+#card p + p { margin-top: 5px; }
+.lead.good { color: var(--good); font-weight: 600; }
+.lead.late { color: var(--warn); font-weight: 600; }
+ul.cav { padding-left: 18px; font-size: 13px; }
+ul.cav li + li { margin-top: 5px; }
+.story { white-space: pre-wrap; font-size: 13px; color: #c4d2de; background: rgba(0, 0, 0, 0.25); border-radius: 6px; padding: 10px; margin-top: 6px; }
+.watch { margin-top: 16px; width: 100%; background: var(--ice); color: #08131c; border: 0; border-radius: 7px; padding: 11px; font-weight: 700; }
+.watch:disabled { background: #2a3744; color: var(--haze); cursor: default; }
+.src { margin-top: 14px; color: var(--haze); font-size: 12px; }
+
+/* stage overlays */
+#zoom { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; }
+#zoom button, #fit { background: rgba(14, 24, 34, 0.9); border: 1px solid var(--edge); border-radius: 7px; width: 38px; height: 38px; font-size: 20px; line-height: 1; }
+#zoom button:hover, #fit:hover { border-color: var(--ice); }
+#tip { position: absolute; pointer-events: none; z-index: 4; background: rgba(8, 14, 21, 0.96); border: 1px solid var(--edge); border-radius: 6px; padding: 5px 9px; font-size: 13px; white-space: nowrap; }
+#tip b { font: 400 18px/1 var(--display); letter-spacing: 0.05em; margin-right: 6px; }
+#hint { position: absolute; left: 12px; bottom: 12px; color: var(--haze); font-size: 12px; background: rgba(8, 14, 21, 0.75); padding: 4px 8px; border-radius: 5px; pointer-events: none; }
+#pb { position: absolute; left: 12px; right: 12px; bottom: 12px; background: rgba(10, 17, 24, 0.94); border: 1px solid var(--edge); border-radius: 10px; padding: 10px 14px 12px; }
+#pb[hidden] { display: none; }
+#pbTop { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+#pbTop strong { font: 400 26px/1 var(--display); letter-spacing: 0.06em; }
+#pbRead { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; color: var(--haze); margin-left: auto; }
+#pbRead b { color: var(--text); font-weight: 600; }
+#pbCtl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+#pbCtl button { background: var(--panel-2); border: 1px solid var(--edge); border-radius: 6px; padding: 6px 11px; font-size: 13px; }
+#pbCtl button[aria-pressed="true"] { border-color: var(--ice); background: var(--ice-dim); }
+#pbCtl .play { background: var(--ice); color: #08131c; font-weight: 700; min-width: 70px; border: 0; }
+#speeds { display: flex; gap: 4px; }
+#scrub { flex: 1; min-width: 80px; accent-color: var(--ice); }
+#pbNote { margin-top: 7px; font-size: 12px; color: var(--haze); }
+#tags { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+#tags li { font-size: 11.5px; color: var(--haze); border: 1px solid var(--edge); border-radius: 999px; padding: 2px 9px; }
+
+@media (max-width: 760px) {
+  /* The map stays pinned on top; the panel scrolls beneath it so a picked tornado is always in view. */
+  #app { grid-template-columns: 1fr; grid-template-rows: minmax(250px, 46%) minmax(0, 1fr); min-height: 560px; }
+  #stage { order: -1; }
+  #side { border-right: 0; border-top: 1px solid var(--edge); overflow-y: auto; }
+  #body { flex: none; overflow: visible; }
+  #brand h1 { font-size: 32px; }
+  #pbRead { margin-left: 0; gap: 2px 12px; }
+  #pb { left: 8px; right: 8px; bottom: 8px; padding: 8px 10px 10px; }
+  #pbNote, #tags { display: none; }
+  #pbTop strong { font-size: 22px; }
+  #hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .switch i::after { transition: none; } }
+</style>
+
+<div id="app">
+  <aside id="side">
+    <header id="brand">
+      <h1>Twister Chaser<small>Lite</small></h1>
+      <p id="sub"></p>
+      <a id="full" href="https://brendanurganus.github.io/twisterchaser/" target="_blank" rel="noopener">Open the full 3D version with terrain and funnel</a>
+      <ul class="legend" id="legend" aria-label="EF rating colors"></ul>
+    </header>
+    <div id="searchWrap">
+      <input id="search" type="search" placeholder="Search a tornado, town or state" autocomplete="off" spellcheck="false" aria-label="Search tornadoes">
+      <ul id="results" hidden></ul>
+    </div>
+    <nav id="tabs" role="tablist" aria-label="Panels">
+      <button role="tab" data-tab="filters" aria-selected="true">Filters</button>
+      <button role="tab" data-tab="lists" aria-selected="false">Lists</button>
+      <button role="tab" data-tab="famous" aria-selected="false">Famous</button>
+      <button role="tab" data-tab="about" aria-selected="false">About</button>
+    </nav>
+    <div id="body"></div>
+  </aside>
+
+  <main id="stage">
+    <canvas id="cv" aria-label="Flat map of tornado tracks. Use the search or the lists to pick a tornado with the keyboard."></canvas>
+    <div id="zoom">
+      <button id="zin" aria-label="Zoom in">+</button>
+      <button id="zout" aria-label="Zoom out">&minus;</button>
+      <button id="fit" aria-label="Show the whole country" title="Show the whole country">&#x2922;</button>
+    </div>
+    <div id="tip" hidden></div>
+    <div id="hint">Drag to move. Scroll or pinch to zoom. Click a track.</div>
+    <section id="pb" hidden aria-label="Playback">
+      <div id="pbTop"><strong id="pbName"></strong><div id="pbRead"></div></div>
+      <div id="pbCtl">
+        <button class="play" id="pbPlay">Play</button>
+        <button id="pbRestart" aria-label="Restart">&#x21BA;</button>
+        <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Position along the path">
+        <span id="speeds" role="group" aria-label="Speed"></span>
+        <button id="pbClose">Close</button>
+      </div>
+      <p id="pbNote"></p>
+      <ul id="tags"></ul>
+    </section>
+  </main>
+</div>
+
+<script id="data" type="application/json">/*__DATA__*/null</script>
+<script>
+(() => {
+  'use strict';
+  const D = JSON.parse(document.getElementById('data').textContent);
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const num = (v, d = 0) => v.toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
+  const EF_FILL = ['#C1E9C1', '#66A366', '#FFE066', '#FFA366', '#E06666', '#EE99EE'];
+  const EF_LINE = ['#55BB55', '#2E7D32', '#DDAA00', '#FF6600', '#CC0000', '#CC00CC'];
+  const GOLD = '#ffd36e', RED = '#e0453a', EARTH = 6371000, YD = 0.9144;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  // ---- projection: Albers equal-area conic for the lower 48 ----------------------------------
+  const R = Math.PI / 180, p1 = 29.5 * R, p2 = 45.5 * R, p0 = 37.5 * R, l0 = -96 * R;
+  const nn = (Math.sin(p1) + Math.sin(p2)) / 2, CC = Math.cos(p1) ** 2 + 2 * nn * Math.sin(p1);
+  const rho0 = Math.sqrt(CC - 2 * nn * Math.sin(p0)) / nn;
+  const proj = (lo, la) => {
+    const rho = Math.sqrt(CC - 2 * nn * Math.sin(la * R)) / nn, th = nn * (lo * R - l0);
+    return [rho * Math.sin(th), rho0 - rho * Math.cos(th)];
+  };
+  const hav = (a, b) => {
+    const dLa = (b[1] - a[1]) * R, dLo = (b[0] - a[0]) * R;
+    const h = Math.sin(dLa / 2) ** 2 + Math.cos(a[1] * R) * Math.cos(b[1] * R) * Math.sin(dLo / 2) ** 2;
+    return 2 * EARTH * Math.asin(Math.sqrt(h));
+  };
+
+  // ---- data prep --------------------------------------------------------------------------------
+  const all = [...D.t, ...D.f];
+  const byId = new Map(all.map((t) => [t.id, t]));
+  const dateFmt = (tz) => new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  const clockFmt = (tz, sec) => new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', ...(sec ? { second: '2-digit' } : {}), timeZoneName: 'short' });
+  const monthOf = (t) => Number(new Intl.DateTimeFormat('en-US', { timeZone: t.tz, month: 'numeric' }).format(Date.parse(t.s))) - 1;
+  for (const t of all) {
+    t.pp = t.p.map(([lo, la]) => proj(lo, la));
+    if (t.pp.length < 2) t.pp = [t.pp[0], t.pp[0]];
+    t.cum = [0];
+    for (let i = 1; i < t.p.length; i++) t.cum.push(t.cum[i - 1] + hav(t.p[i - 1], t.p[i]));
+    t.total = t.cum[t.cum.length - 1] || 1;
+    t.mo = monthOf(t);
+    t.label = t.fam ? `${t.n} ${t.yr}` : t.n;
+    t.rl = t.rt ?? `EF${t.ef}`;
+    const m = t.pp[Math.floor(t.pp.length / 2)];
+    t.mid = m;
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const [x, y] of t.pp) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    t.bb = [x0, y0, x1, y1];
+  }
+  const states = D.states.map((r) => r.map(([lo, la]) => proj(lo, la)));
+  const search = all.map((t) => ({ t, key: `${t.n} ${t.nr ?? ''} ${t.st ?? ''} ${t.fam ? 'famous ' + t.yr : ''}`.toLowerCase() }));
+
+  // ---- filter state -------------------------------------------------------------------------------
+  const F = { ef: new Set([0, 1, 2, 3, 4, 5]), months: new Set(), minDeaths: 0, famous: true, warn: false };
+  const matches = (t, skip = '') => (skip === 'ef' || F.ef.has(t.ef)) && (skip === 'mo' || !F.months.size || F.months.has(t.mo)) && t.de >= F.minDeaths;
+  const visible = () => D.t.filter((t) => matches(t));
+  let sel = null, hover = null;
+
+  // ---- canvas + view ------------------------------------------------------------------------------
+  const cv = $('cv'), ctx = cv.getContext('2d'), stage = $('stage');
+  let W = 0, H = 0, dpr = 1;
+  const view = { cx: 0, cy: 0, k: 1 };
+  let allBB = [1e9, 1e9, -1e9, -1e9];
+  for (const r of states) for (const [x, y] of r) { allBB = [Math.min(allBB[0], x), Math.min(allBB[1], y), Math.max(allBB[2], x), Math.max(allBB[3], y)]; }
+  const sx = (x) => W / 2 + (x - view.cx) * view.k, sy = (y) => H / 2 - (y - view.cy) * view.k;
+  // bottom: pixels at the bottom of the map that a panel covers, so the fitted area stays clear of it.
+  function fitBB(bb, pad = 40, maxK = Infinity, bottom = 0) {
+    const k = Math.min((W - 2 * pad) / Math.max(1e-9, bb[2] - bb[0]), (H - bottom - 2 * pad) / Math.max(1e-9, bb[3] - bb[1]), maxK);
+    return { cx: (bb[0] + bb[2]) / 2, cy: (bb[1] + bb[3]) / 2 - bottom / 2 / k, k };
+  }
+  let anim = 0;
+  function goto(v, ms = 650) {
+    cancelAnimationFrame(anim);
+    if (reduced || ms === 0) { Object.assign(view, v); draw(); return; }
+    const a = { ...view }, t0 = performance.now();
+    const step = (now) => {
+      const u = Math.min(1, (now - t0) / ms), e = u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2;
+      view.cx = a.cx + (v.cx - a.cx) * e; view.cy = a.cy + (v.cy - a.cy) * e;
+      view.k = Math.exp(Math.log(a.k) + (Math.log(v.k) - Math.log(a.k)) * e);
+      draw();
+      if (u < 1) anim = requestAnimationFrame(step);
+    };
+    anim = requestAnimationFrame(step);
+  }
+  const home = () => fitBB(allBB, 24);
+  const kMin = () => home().k * 0.8, kMax = () => home().k * 400;
+  function resize() {
+    const r = stage.getBoundingClientRect();
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = Math.max(1, r.width); H = Math.max(1, r.height);
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    if (!resize.done) { Object.assign(view, home()); resize.done = true; }
+    draw();
+  }
+  new ResizeObserver(resize).observe(stage);
+
+  // ---- drawing ----------------------------------------------------------------------------------------
+  const widthPx = (t) => (t.wd ? (t.wd * YD / EARTH) * view.k : 0);
+  let queued = false;
+  function draw() {
+    if (queued) return; queued = true;
+    requestAnimationFrame(() => { queued = false; paint(); });
+  }
+  function trace(pp) {
+    ctx.beginPath();
+    pp.forEach(([x, y], i) => (i ? ctx.lineTo(sx(x), sy(y)) : ctx.moveTo(sx(x), sy(y))));
+  }
+  function paint() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.fillStyle = '#0e1b27'; ctx.strokeStyle = 'rgba(131,152,173,0.38)'; ctx.lineWidth = 1;
+    for (const r of states) { trace(r); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    const list = [...visible(), ...(F.famous ? D.f : [])].filter((t) => {
+      const [x0, y0, x1, y1] = t.bb;
+      return sx(x1) > -20 && sx(x0) < W + 20 && sy(y0) > -20 && sy(y1) < H + 20;
+    }).sort((a, b) => a.ef - b.ef);
+    const dim = pb.t ? 0.25 : 1;
+    for (const t of list) {
+      if (pb.t && pb.t.id !== t.id) ctx.globalAlpha = dim; else ctx.globalAlpha = 1;
+      const wpx = widthPx(t);
+      if (wpx > 3 && !(pb.t && pb.t.id === t.id)) {
+        trace(t.pp); ctx.strokeStyle = EF_FILL[t.ef]; ctx.globalAlpha *= 0.55; ctx.lineWidth = wpx; ctx.stroke(); ctx.globalAlpha = pb.t && pb.t.id !== t.id ? dim : 1;
+      }
+      trace(t.pp);
+      ctx.strokeStyle = '#060b10'; ctx.lineWidth = (wpx > 3 ? 1.4 : 2 + t.ef * 0.55) + 2; ctx.stroke();
+      ctx.strokeStyle = EF_FILL[t.ef]; ctx.lineWidth = wpx > 3 ? 1.4 : 1.3 + t.ef * 0.55; ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    for (const id of [hover, sel]) {
+      const t = id && byId.get(id); if (!t) continue;
+      trace(t.pp); ctx.strokeStyle = '#fff'; ctx.globalAlpha = id === sel ? 0.95 : 0.55; ctx.lineWidth = 3 + t.ef * 0.55; ctx.stroke(); ctx.globalAlpha = 1;
+      trace(t.pp); ctx.strokeStyle = EF_FILL[t.ef]; ctx.lineWidth = 1.5 + t.ef * 0.5; ctx.stroke();
+    }
+    if (F.famous) {
+      ctx.font = '19px VT323, "Courier New", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      for (const t of D.f) {
+        const x = sx(t.mid[0]), y = sy(t.mid[1]);
+        if (x < -20 || x > W + 20 || y < -20 || y > H + 20 || pb.t) continue;
+        const ringA = Math.max(0, Math.min(1, 1 - (Math.log(view.k / home().k) - 2.2) / 1.2));
+        if (ringA <= 0) continue;
+        ctx.globalAlpha = ringA; ctx.strokeStyle = GOLD; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(x, y, 9, 0, 6.2832); ctx.stroke();
+        if (view.k > home().k * 2.2) {
+          ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(6,11,16,0.95)'; ctx.strokeText(t.label.toUpperCase(), x, y + 13);
+          ctx.fillStyle = GOLD; ctx.fillText(t.label.toUpperCase(), x, y + 13);
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
+    if (pb.t) paintPlayback();
+  }
+
+  // ---- hit testing ---------------------------------------------------------------------------------------
+  function segDist(px, py, ax, ay, bx, by) {
+    const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+    const u = l2 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / l2)) : 0;
+    return Math.hypot(px - (ax + u * dx), py - (ay + u * dy));
+  }
+  function pick(x, y, touch) {
+    const thr = touch ? 18 : 10;
+    let best = null, bd = 1e9;
+    for (const t of [...visible(), ...(F.famous ? D.f : [])]) {
+      let d = 1e9;
+      for (let i = 1; i < t.pp.length; i++) d = Math.min(d, segDist(x, y, sx(t.pp[i - 1][0]), sy(t.pp[i - 1][1]), sx(t.pp[i][0]), sy(t.pp[i][1])));
+      d = Math.max(0, d - widthPx(t) / 2);
+      d -= t.ef * 0.8 + (t.fam ? 3 : 0); // strong and famous tracks win overlaps
+      if (d < thr && d < bd) { bd = d; best = t; }
+    }
+    return best;
+  }
+
+  // ---- pointer, wheel, pinch ----------------------------------------------------------------------------------
+  const ptrs = new Map();
+  let drag = null, pinch0 = null;
+  const rel = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  function zoomAt(f, x, y) {
+    const k = Math.max(kMin(), Math.min(kMax(), view.k * f)), g = k / view.k;
+    const wx = view.cx + (x - W / 2) / view.k, wy = view.cy - (y - H / 2) / view.k;
+    view.k = k; view.cx = wx - (x - W / 2) / k; view.cy = wy + (y - H / 2) / k;
+    draw();
+  }
+  cv.addEventListener('pointerdown', (e) => {
+    cv.setPointerCapture(e.pointerId); cancelAnimationFrame(anim);
+    ptrs.set(e.pointerId, rel(e));
+    if (ptrs.size === 1) drag = { x: e.clientX, y: e.clientY, cx: view.cx, cy: view.cy, moved: false, touch: e.pointerType === 'touch' };
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), k: view.k }; drag = null; }
+  });
+  cv.addEventListener('pointermove', (e) => {
+    const p = rel(e);
+    if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, p);
+    if (ptrs.size === 2 && pinch0) {
+      const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      zoomAt((pinch0.k * d / pinch0.d) / view.k, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+      return;
+    }
+    if (drag) {
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (Math.hypot(dx, dy) > 4) { drag.moved = true; cv.classList.add('drag'); }
+      if (drag.moved) { view.cx = drag.cx - dx / view.k; view.cy = drag.cy + dy / view.k; draw(); }
+    } else if (e.pointerType !== 'touch') {
+      const t = pick(p[0], p[1], false);
+      const id = t ? t.id : null;
+      if (id !== hover) { hover = id; draw(); }
+      const tip = $('tip');
+      if (t) { tip.innerHTML = `<b style="color:${EF_FILL[t.ef]}">${esc(t.rl)}</b>${esc(t.label)}${t.st ? ', ' + esc(t.st) : ''}`; tip.style.left = `${Math.min(p[0] + 14, W - 180)}px`; tip.style.top = `${p[1] + 14}px`; tip.hidden = false; }
+      else tip.hidden = true;
+      cv.style.cursor = t ? 'pointer' : '';
+    }
+  });
+  const endPtr = (e) => {
+    const p = rel(e), was = drag;
+    ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = null;
+    cv.classList.remove('drag');
+    if (was && !was.moved && e.type === 'pointerup') { const t = pick(p[0], p[1], was.touch); if (t) select(t.id); else if (sel && !pb.t) deselect(); }
+    if (!ptrs.size) drag = null;
+  };
+  cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
+  cv.addEventListener('pointerleave', () => { $('tip').hidden = true; if (hover) { hover = null; draw(); } });
+  cv.addEventListener('wheel', (e) => { e.preventDefault(); const p = rel(e); zoomAt(Math.exp(-e.deltaY * 0.0016), p[0], p[1]); }, { passive: false });
+  cv.addEventListener('dblclick', (e) => { const p = rel(e); zoomAt(2, p[0], p[1]); });
+  $('zin').onclick = () => zoomAt(1.6, W / 2, H / 2);
+  $('zout').onclick = () => zoomAt(1 / 1.6, W / 2, H / 2);
+  $('fit').onclick = () => { if (pb.t) closePlayback(); goto(home()); };
+
+  // ---- side panel ---------------------------------------------------------------------------------------------------
+  $('legend').innerHTML = EF_FILL.map((c, i) => `<li><i style="background:${c};border-color:${EF_LINE[i]}"></i>EF${i}</li>`).join('');
+  const upd = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/Chicago' }).format(Date.parse(D.updated));
+  const setSub = () => {
+    const n = visible().length;
+    $('sub').textContent = `${num(n)}${n === D.t.length ? '' : ' of ' + num(D.t.length)} surveyed tornadoes in ${D.year}. Data pulled ${upd}.`;
+  };
+  let tab = 'filters';
+  const body = $('body');
+  const chip = (t) => `<span class="tag" style="background:${EF_FILL[t.ef]};border-color:${EF_LINE[t.ef]}">${esc(t.rl)}</span>`;
+  const dayOf = (t) => dateFmt(t.tz).format(Date.parse(t.s)).replace(/^\w+, /, '');
+  const rowsHTML = (arr, val) => arr.length ? `<ol class="rows">${arr.map((t) => `<li><button data-id="${esc(t.id)}">${chip(t)}<span class="nm">${esc(t.label)}<small>${esc(t.st ?? '')}, ${esc(dayOf(t))}${t.fam && t.kind === 'traced' ? ' <em>approx. path</em>' : ''}</small></span><span class="val">${esc(val(t))}</span></button></li>`).join('')}</ol>` : '<p class="dim">Nothing matches your filters.</p>';
+  const LISTS = {
+    Strongest: [(L) => [...L].sort((a, b) => b.ef - a.ef || (b.mph ?? 0) - (a.mph ?? 0) || b.mi - a.mi), (t) => (t.mph ? `${t.mph} mph` : t.rl)],
+    Deadliest: [(L) => L.filter((t) => t.de > 0).sort((a, b) => b.de - a.de || b.inj - a.inj), (t) => `${t.de} ${t.de === 1 ? 'death' : 'deaths'}`],
+    Longest: [(L) => [...L].sort((a, b) => b.mi - a.mi), (t) => `${num(t.mi, 1)} mi`],
+    Widest: [(L) => L.filter((t) => t.wd != null).sort((a, b) => b.wd - a.wd), (t) => `${num(t.wd)} yd`],
+  };
+  let listKind = 'Strongest';
+  function render() {
+    setSub();
+    if (sel) return renderCard();
+    if (tab === 'filters') {
+      const cnt = (skip, f) => { const c = {}; for (const t of D.t) if (matches(t, skip)) { const k = f(t); c[k] = (c[k] ?? 0) + 1; } return c; };
+      const ce = cnt('ef', (t) => t.ef), cm = cnt('mo', (t) => t.mo);
+      const n = visible().length;
+      body.innerHTML = `
+        <h2>Rating</h2>
+        <div class="chips" id="fEF">${[0, 1, 2, 3, 4, 5].map((i) => `<button class="chip" data-ef="${i}" aria-pressed="${F.ef.has(i)}"><i style="background:${EF_FILL[i]};border-color:${EF_LINE[i]}"></i><b>EF${i}</b><span>${ce[i] ?? 0}</span></button>`).join('')}</div>
+        <h2>Month</h2>
+        <div class="chips" id="fMo">${MONTHS.map((m, i) => `<button class="chip" data-m="${i}" aria-pressed="${F.months.has(i)}"><b>${m}</b><span>${cm[i] ?? 0}</span></button>`).join('')}</div>
+        <h2>Deaths</h2>
+        <div class="seg" id="fDe">${[[0, 'Any'], [1, '1 or more'], [2, '2 or more']].map(([k, l]) => `<button data-d="${k}" aria-pressed="${F.minDeaths === k}">${l}</button>`).join('')}</div>
+        <h2>Map</h2>
+        <button class="switch" id="fFam" role="switch" aria-pressed="${F.famous}"><i></i><span>Show the famous ten</span></button>
+        <p class="dim" style="margin-top:12px">${num(n)} of ${num(D.t.length)} tornadoes shown. <button class="link" id="fReset"${n === D.t.length && F.famous ? ' hidden' : ''}>Reset filters</button></p>`;
+    } else if (tab === 'lists') {
+      const [pickFn, val] = LISTS[listKind], L = visible();
+      body.innerHTML = `<div class="seg" id="lk">${Object.keys(LISTS).map((k) => `<button data-k="${k}" aria-pressed="${k === listKind}">${k}</button>`).join('')}</div>
+        <p class="dim" style="margin-top:8px">Top 10 of the ${num(L.length)} tornadoes that match your filters.</p>${rowsHTML(pickFn(L).slice(0, 10), val)}`;
+    } else if (tab === 'famous') {
+      body.innerHTML = `<p class="dim" style="margin-top:8px">Ten well-known tornadoes from 1999 to 2024. They are not counted in the filters or lists, which cover ${D.year} only.</p>${rowsHTML(D.f, (t) => `${t.de} ${t.de === 1 ? 'death' : 'deaths'}`)}`;
+    } else {
+      body.innerHTML = `
+        <h2>What this is</h2>
+        <p>A flat map of every rated tornado the National Weather Service surveyed in ${D.year}, plus ten famous ones. Pick a tornado for its numbers and warning, then watch it from above.</p>
+        <h2>What is real</h2>
+        <p>Tracks, ratings, widths, deaths and injuries come from the NWS Damage Assessment Toolkit. Famous-tornado headline numbers come from the NOAA Storm Prediction Center. Warnings come from the Iowa Environmental Mesonet archive.</p>
+        <h2>What is drawn</h2>
+        <p>Playback moves at constant speed between the survey's start and end times, so the motion is an estimate. The damage band is a constant width in this lite edition. Hand-traced paths (Joplin, Moore 1999, Greensburg) are approximate.</p>
+        <h2>What is missing here</h2>
+        <p>Terrain, aerial imagery, real damage outlines, the 3D funnel and warning polygons are in the <a href="https://brendanurganus.github.io/twisterchaser/" target="_blank" rel="noopener">full version</a>, which also has the methodology page.</p>
+        <p class="dim" style="margin-top:14px">Not an official NWS or NOAA product, not a forecast, not safety guidance. For weather decisions use weather.gov.</p>`;
+    }
+  }
+  body.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.id) return select(b.dataset.id);
+    if (b.dataset.ef != null) { const i = Number(b.dataset.ef); F.ef.has(i) ? F.ef.delete(i) : F.ef.add(i); }
+    else if (b.dataset.m != null) { const i = Number(b.dataset.m); F.months.has(i) ? F.months.delete(i) : F.months.add(i); }
+    else if (b.dataset.d != null) F.minDeaths = Number(b.dataset.d);
+    else if (b.id === 'fFam') F.famous = !F.famous;
+    else if (b.id === 'fReset') { F.ef = new Set([0, 1, 2, 3, 4, 5]); F.months.clear(); F.minDeaths = 0; F.famous = true; }
+    else if (b.dataset.k) listKind = b.dataset.k;
+    else if (b.id === 'cBack') return deselect();
+    else if (b.id === 'cWatch') return openPlayback(sel);
+    else return;
+    render(); draw();
+  });
+  for (const b of $('tabs').children) b.onclick = () => {
+    tab = b.dataset.tab;
+    for (const x of $('tabs').children) x.setAttribute('aria-selected', String(x === b));
+    if (sel) deselect(); else render();
+  };
+
+  // ---- card ---------------------------------------------------------------------------------------------------------------
+  function notesFor(t) {
+    const out = [];
+    if (t.kind === 'traced') out.push('The path is approximate. It was hand-traced through landmarks the NWS names along the track, so it can be off by a mile or more.');
+    else if (t.kind === 'outline') out.push('The path is the middle of the NWS damage outline, not a surveyed centerline.');
+    if (t.ok_outline === 'envelope') out.push('The NWS published one damage outline for this tornado, not separate rating zones.');
+    return out;
+  }
+  function renderCard() {
+    const t = sel && byId.get(sel); if (!t) return;
+    const start = Date.parse(t.s), tz = t.tz;
+    const stat = (l, v) => `<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`;
+    let warn;
+    if (t.w) {
+      const [wfo, etn, iss, lead, rel] = t.w;
+      warn = `<p class="lead ${lead >= 0 ? 'good' : 'late'}">${lead >= 0 ? `${num(lead)} ${lead === 1 ? 'minute' : 'minutes'} of lead time.` : `Warning came ${num(-lead)} ${lead === -1 ? 'minute' : 'minutes'} after the tornado began.`}</p>
+        <p>NWS ${esc(wfo)} issued tornado warning ${esc(etn)} at ${esc(clockFmt(tz).format(Date.parse(iss)))}.</p>
+        ${!rel ? '<p class="dim">Lead time is uncertain because the survey timing is unreliable.</p>' : ''}
+        ${t.fam && t.nw > 1 ? `<p class="dim">${t.nw} tornado warnings touched the path. This is the earliest one that was active when the tornado began.</p>` : ''}`;
+    } else warn = '<p>No tornado warning matched this tornado in the NWS archive.</p>';
+    const cav = t.fam ? [...(t.cav || []), ...notesFor(t)] : [];
+    const length = t.fam && t.drawn && Math.abs(t.drawn - t.mi) > 1 ? `${num(t.mi, 1)} mi (${num(t.drawn, 1)} drawn)` : `${num(t.mi, 1)} mi`;
+    body.innerHTML = `<div id="card">
+      <button class="link back" id="cBack">&larr; Back to the list</button>
+      <div class="top">${chip(t)}<div><h2>${esc(t.n)}</h2><p class="dim">${esc(t.st ?? '')}${t.st ? ', ' : ''}${esc(dateFmt(tz).format(start))}</p></div></div>
+      ${t.nr ? `<p class="dim" style="margin-top:8px">About ${esc(t.nr)}</p>` : ''}
+      <dl class="stats">
+        ${stat('Path length', length)}${stat('Max width', t.wd != null ? `${num(t.wd)} yd` : 'not recorded')}
+        ${stat('Time on the ground', t.ok ? durText(t.dur) : 'unreliable')}${stat('Peak wind', t.wind ?? (t.mph ? `${t.mph} mph` : 'not recorded'))}
+        ${stat('Began', clockFmt(tz).format(start))}${stat('Ended', t.ok ? clockFmt(tz).format(Date.parse(t.e)) : 'unreliable')}
+      </dl>
+      <h3>Human impact</h3>
+      <p><b>${t.de} ${t.de === 1 ? 'death' : 'deaths'}, ${t.inj} ${t.inj === 1 ? 'injury' : 'injuries'}.</b></p>
+      ${cav.length ? `<h3>Where sources differ</h3><ul class="cav">${cav.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+      <h3>Tornado warning</h3>${warn}
+      ${t.fam ? `<h3>About this tornado</h3><div class="story">${esc(t.story)}</div>` : (t.note ? `<h3>NWS survey notes</h3><div class="story">${esc(t.note)}${t.note.length >= 420 ? '...' : ''}</div>` : '')}
+      <button class="watch" id="cWatch"${t.ok ? '' : ' disabled'}>${t.ok ? 'Watch from above' : 'Playback is off'}</button>
+      <p class="dim" style="margin-top:6px">${t.ok ? (t.kind === 'traced' ? 'The path is a hand-traced approximation, so the motion is too.' : 'Follows the tornado along its path at constant speed. Timing is estimated and the damage band is one constant width.') : `Playback is off for this tornado: ${esc(t.why)}.`}</p>
+      <p class="src">${t.fam ? `Headline numbers: NOAA Storm Prediction Center. Times: ${esc(t.src)}.` : 'Source: NWS Damage Assessment Toolkit.'} Warnings: Iowa Environmental Mesonet.</p>
+    </div>`;
+    body.scrollTop = 0;
+  }
+  function durText(m) { m = Math.round(m); return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`; }
+  function select(id) {
+    const t = byId.get(id); if (!t) return;
+    if (pb.t) closePlayback();
+    sel = id; hover = null; $('results').hidden = true;
+    render();
+    goto(fitBB(t.bb, Math.min(60, W / 6), kMax() * 0.6), 700);
+    if (matchMedia('(max-width: 760px)').matches) $('side').scrollTo({ top: $('tabs').offsetTop, behavior: reduced ? 'auto' : 'smooth' });
+  }
+  function deselect() { sel = null; render(); draw(); }
+
+  // ---- search ------------------------------------------------------------------------------------------------------------------------
+  const si = $('search'), sr = $('results');
+  si.addEventListener('input', () => {
+    const q = si.value.trim().toLowerCase();
+    if (!q) { sr.hidden = true; return; }
+    const toks = q.split(/[\s,]+/).filter(Boolean);
+    const hits = search.filter((x) => toks.every((k) => x.key.includes(k)))
+      .sort((a, b) => (b.t.fam ? 1 : 0) - (a.t.fam ? 1 : 0) || b.t.ef - a.t.ef || b.t.mi - a.t.mi).slice(0, 8);
+    sr.innerHTML = hits.length
+      ? hits.map(({ t }) => `<li><button data-id="${esc(t.id)}">${chip(t)}<span class="nm">${esc(t.label)}<small>${esc(t.st ?? '')}, ${esc(dayOf(t))}</small></span></button></li>`).join('')
+      : '<li class="none">Nothing found. Try a town, a state or a famous name like Joplin.</li>';
+    sr.hidden = false;
+  });
+  sr.addEventListener('click', (e) => { const b = e.target.closest('button[data-id]'); if (b) { si.value = ''; select(b.dataset.id); } });
+  addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { if (!sr.hidden) { sr.hidden = true; } else if (pb.t) closePlayback(); else if (sel) deselect(); }
+    else if (e.key === '/' && document.activeElement !== si) { e.preventDefault(); si.focus(); }
+    else if (pb.t && e.key === ' ' && document.activeElement.tagName !== 'BUTTON' && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); setPlaying(!pb.playing); }
+  });
+  document.addEventListener('pointerdown', (e) => { if (!e.target.closest('#searchWrap')) sr.hidden = true; });
+
+  // ---- playback ---------------------------------------------------------------------------------------------------------------------------------
+  const pb = { t: null, sim: 0, playing: false, speed: 1, last: 0, raf: 0 };
+  $('speeds').innerHTML = [1, 10, 60].map((s) => `<button data-s="${s}" aria-pressed="${s === 1}">${s}x</button>`).join(' ');
+  function setSpeed(s) { pb.speed = s; for (const b of $('speeds').children) b.setAttribute('aria-pressed', String(Number(b.dataset.s) === s)); }
+  $('speeds').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setSpeed(Number(b.dataset.s)); });
+  function posAt(t, p) {
+    const d = p * t.total; let i = 1;
+    while (i < t.cum.length - 1 && t.cum[i] < d) i++;
+    const seg = t.cum[i] - t.cum[i - 1] || 1, u = Math.max(0, Math.min(1, (d - t.cum[i - 1]) / seg));
+    const a = t.pp[i - 1], b = t.pp[i];
+    return { x: a[0] + (b[0] - a[0]) * u, y: a[1] + (b[1] - a[1]) * u, i, u };
+  }
+  function openPlayback(t) {
+    pb.t = t; pb.sim = 0; setSpeed(1);
+    $('pb').hidden = false; $('hint').hidden = true;
+    $('pbName').textContent = `${t.label}`;
+    const note = t.kind === 'traced' ? 'Top-down view. The path is hand-traced and the band is one constant width, so both are approximate.' : 'Top-down view. The band is drawn at the maximum surveyed width, one constant width along the path.';
+    $('pbNote').textContent = `${note} Position moves at constant speed between the survey's start and end times. Terrain, the funnel and the real damage outline are in the full version.`;
+    $('tags').innerHTML = ['Timing estimated', 'Band approximate', t.kind === 'traced' ? 'Path approximate' : ''].filter(Boolean).map((x) => `<li>${x}</li>`).join('');
+    goto(fitBB(t.bb, Math.min(90, W / 5), kMax() * 0.6, $('pb').offsetHeight + 12), 700);
+    setPlaying(false); readout(); draw();
+  }
+  function closePlayback() {
+    setPlaying(false); pb.t = null; $('pb').hidden = true; $('hint').hidden = false; draw();
+  }
+  function setPlaying(on) {
+    pb.playing = on; $('pbPlay').textContent = on ? 'Pause' : (pb.sim >= pb.t?.dur * 60 ? 'Replay' : 'Play');
+    cancelAnimationFrame(pb.raf);
+    if (on) { pb.last = performance.now(); pb.raf = requestAnimationFrame(tick); }
+  }
+  function tick(now) {
+    const dur = pb.t.dur * 60;
+    pb.sim = Math.min(dur, pb.sim + ((now - pb.last) / 1000) * pb.speed); pb.last = now;
+    readout(); draw();
+    if (pb.sim >= dur) { setPlaying(false); return; }
+    pb.raf = requestAnimationFrame(tick);
+  }
+  function readout() {
+    const t = pb.t, dur = t.dur * 60, p = dur ? pb.sim / dur : 0;
+    const mi = (t.fam && t.drawn ? t.drawn : t.mi);
+    $('pbRead').innerHTML = `<span>Local time <b>${esc(clockFmt(t.tz, true).format(Date.parse(t.s) + pb.sim * 1000))}</b></span><span>Distance <b>${num(mi * p, 1)} of ${num(mi, 1)} mi</b></span><span>Rating <b>${esc(t.rl)} overall</b></span><span>Elapsed <b>${mmss(pb.sim)} / ${mmss(dur)}</b></span>`;
+    $('scrub').value = String(Math.round(p * 1000));
+    if (!pb.playing) $('pbPlay').textContent = pb.sim >= dur ? 'Replay' : 'Play';
+  }
+  const mmss = (s) => { s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return h ? `${h}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}` : `${m}:${String(x).padStart(2, '0')}`; };
+  $('pbPlay').onclick = () => { if (pb.sim >= pb.t.dur * 60) pb.sim = 0; setPlaying(!pb.playing); };
+  $('pbRestart').onclick = () => { pb.sim = 0; readout(); setPlaying(true); };
+  $('pbClose').onclick = closePlayback;
+  $('scrub').addEventListener('input', (e) => { pb.sim = (Number(e.target.value) / 1000) * pb.t.dur * 60; readout(); draw(); });
+  function paintPlayback() {
+    const t = pb.t, p = t.dur ? pb.sim / (t.dur * 60) : 0, here = posAt(t, p);
+    const wpx = Math.max(5, widthPx(t) || (27 / EARTH) * view.k);
+    const trail = [...t.pp.slice(0, here.i), [here.x, here.y]];
+    if (trail.length >= 2) {
+      trace(trail); ctx.strokeStyle = EF_FILL[t.ef]; ctx.globalAlpha = 0.6; ctx.lineWidth = wpx; ctx.stroke(); ctx.globalAlpha = 1;
+      trace(trail); ctx.strokeStyle = EF_LINE[t.ef]; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+    trace(t.pp); ctx.strokeStyle = 'rgba(220,232,242,0.5)'; ctx.lineWidth = 1.2; ctx.setLineDash([4, 5]); ctx.stroke(); ctx.setLineDash([]);
+    const x = sx(here.x), y = sy(here.y);
+    ctx.beginPath(); ctx.arc(x, y, Math.max(7, wpx / 2), 0, 6.2832);
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, 3.5, 0, 6.2832); ctx.fillStyle = '#fff'; ctx.fill();
+  }
+
+  // ---- go ----------------------------------------------------------------------------------------------------------------------------------------------
+  render();
+  const id0 = location.hash.startsWith('#t-') ? location.hash.slice(3) : '';
+  resize();
+  if (id0 && byId.has(id0)) select(id0);
+  window.tcl = { select, view, F, openPlayback: (id) => { select(id); openPlayback(byId.get(id)); }, pb, goto, home };
+})();
+</script>
