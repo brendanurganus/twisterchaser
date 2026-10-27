@@ -255,3 +255,29 @@ a.primary[aria-disabled="true"] { background: #2a3744; color: var(--haze); point
   #tlRange { font-size: 13px; }
   .big4 b { font-size: 38px; }
 }
+
+/* ---- intro: the year in tracks ---------------------------------------------------------------- */
+#intro { position: fixed; inset: 0; z-index: 60; background: #070c11; color: var(--text); transition: opacity 0.45s ease; cursor: pointer; }
+#intro[hidden] { display: none; }
+#intro.out { opacity: 0; pointer-events: none; }
+#introCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#introTitle { position: absolute; top: 22px; left: 28px; margin: 0; font-size: 34px; letter-spacing: 0.14em; color: var(--ice); }
+#introSkip {
+  position: absolute; top: 20px; right: 24px; font: inherit; font-size: 14px; color: var(--text); background: rgba(8, 14, 21, 0.8);
+  border: 1px solid var(--panel-edge); border-radius: 6px; padding: 8px 16px; cursor: pointer;
+}
+#introSkip:hover, #introSkip:focus-visible { border-color: var(--ice); color: #fff; }
+#introFoot { position: absolute; left: 28px; right: 28px; bottom: 56px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; pointer-events: none; }
+#introDate { font-family: var(--display); font-size: 96px; line-height: 0.8; letter-spacing: 0.06em; color: #fff; }
+#introCount { font-family: var(--display); font-size: 40px; letter-spacing: 0.1em; color: var(--ice); text-align: right; white-space: nowrap; }
+#introSub { position: absolute; left: 28px; right: 28px; bottom: 22px; margin: 0; font-size: 13.5px; color: var(--haze); pointer-events: none; }
+@media (max-width: 760px) {
+  #introTitle { top: 18px; left: 16px; font-size: 26px; letter-spacing: 0.1em; }
+  #introSkip { top: 14px; right: 14px; }
+  #introFoot { left: 16px; right: 16px; bottom: 56px; }
+  #introDate { font-size: 60px; }
+  #introCount { font-size: 26px; }
+  #introSub { left: 16px; right: 16px; bottom: 20px; }
+}
+.aboutlink { margin: 18px 0 0; padding-top: 12px; border-top: 1px solid var(--panel-edge); font-size: 13px; }
+.aboutlink a { color: var(--ice); }

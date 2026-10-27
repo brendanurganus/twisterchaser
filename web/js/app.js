@@ -13,6 +13,7 @@ import { createFilters } from './filters.js';
 import { createTimeline } from './timeline.js';
 import { createDock } from './dock.js';
 import { createSearch } from './search.js';
+import { shouldIntro, runIntro } from './intro.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -55,6 +56,8 @@ async function main() {
   const famousIds = famous.map((t) => t.id);
   const lite = C.LITE;
   const filters = createFilters(all, year);
+  // The intro plays over the loading screen while the map finishes starting up.
+  const introDone = shouldIntro(params) ? runIntro({ all, states, year }) : Promise.resolve();
 
   // ---- header + legend -----------------------------------------------------
   const updated = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/Chicago' })
@@ -469,6 +472,7 @@ async function main() {
   applyView(state.view, false);
   await Promise.race([new Promise((res) => map.once('idle', res)), new Promise((res) => setTimeout(res, 25000))]);
   $('loading').hidden = true;
+  await introDone;
   if (!phone()) dock.open('filters');
   if (params.has('id') && byId.has(params.get('id'))) select(params.get('id'));
 

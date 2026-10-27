@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Twister Chaser: about the data</title>
+  <meta name="description" content="Where Twister Chaser's tornado data comes from, how it is cleaned, what playback invents, and where the sources disagree.">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/about.css">
+</head>
+<body class="doc">
+  <main>
+    <a class="link back" href="index.html">&larr; Back to the map</a>
+    <h1>About the data</h1>
+    <p class="lede">Twister Chaser is a 3D explorer of tornadoes the National Weather Service surveyed in 2026, plus ten famous ones from 1999 to 2024. This page says where every number comes from, what is measured, what is estimated, and what is simply drawn to look right.</p>
+
+    <section id="live" class="now" aria-label="Current numbers"><p class="dim">Loading current numbers.</p></section>
+
+    <h2>Where the data comes from</h2>
+    <table class="src">
+      <thead><tr><th>What</th><th>Source</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>2026 tracks, ratings, widths, casualties, survey notes</td><td><a href="https://apps.dat.noaa.gov/StormDamage/DamageViewer/" rel="noopener">NWS Damage Assessment Toolkit</a> (DAT)</td><td>Entered by local forecast offices after a survey. Early entries change as surveys finish.</td></tr>
+        <tr><td>Damage outlines</td><td>NWS DAT polygons</td><td>Matched to tracks by geometry and date, because DAT's own link between them is mostly empty.</td></tr>
+        <tr><td>Tornado warnings</td><td><a href="https://mesonet.agron.iastate.edu/" rel="noopener">Iowa Environmental Mesonet</a> archive of NWS warnings</td><td>Warning polygons and issue times. Not an official NWS product.</td></tr>
+        <tr><td>Famous tornadoes: headline numbers</td><td><a href="https://www.spc.noaa.gov/wcm/" rel="noopener">NOAA Storm Prediction Center</a> tornado database</td><td>Rating, deaths, injuries, length, width.</td></tr>
+        <tr><td>Famous tornadoes: tracks and outlines</td><td>NWS DAT where it holds the event, otherwise hand-traced</td><td>See "The famous ten" below.</td></tr>
+        <tr><td>Famous tornadoes: start and end times</td><td>NWS event pages and survey summaries, cross-checked on Wikipedia</td><td>Each card names its source.</td></tr>
+        <tr><td>Landmarks used for hand-traced paths</td><td><a href="https://nominatim.org/" rel="noopener">OpenStreetMap Nominatim</a></td><td>© OpenStreetMap contributors, ODbL. Geocoded once and stored.</td></tr>
+        <tr><td>States and places</td><td>US Census Bureau cartographic boundaries and Gazetteer (2023)</td><td></td></tr>
+        <tr><td>Local time zones</td><td>timezonefinder / timezone-boundary-builder</td><td>ODbL. Every time on the site is local to where the tornado was.</td></tr>
+        <tr><td>Terrain</td><td><a href="https://registry.opendata.aws/terrain-tiles/" rel="noopener">Mapzen / AWS Terrain Tiles</a></td><td>Elevation is exaggerated 1.4 times on the main map.</td></tr>
+        <tr><td>Aerial imagery</td><td>USGS The National Map (USDA NAIP)</td><td>Today's imagery, not a photo from before the storm.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>How the 2026 set is built</h2>
+    <ul>
+      <li><b>Only rated tornadoes.</b> Tornadoes the NWS surveyed but could not rate (EFU) are removed, so this is not every tornado of the year and the counts will not match the SPC's preliminary totals.</li>
+      <li><b>Not tornadoes, removed.</b> Straight-line wind records that share the same toolkit, records with no usable rating or geometry, and exact duplicates.</li>
+      <li><b>Missing is shown as missing.</b> A width of zero or blank reads "not recorded", not 0. Property damage is not shown at all because the toolkit's values have no documented units and are almost always blank.</li>
+      <li><b>Names.</b> Many surveys have no name. Those get a label from the nearest town, and the card says "About 3 mi NE of" a place instead of pretending it is the exact location.</li>
+      <li><b>Straight lines.</b> Many tracks are just two points, a start and an end. They are drawn exactly as surveyed, so a real curve will not appear.</li>
+    </ul>
+
+    <h2>Playback: what is real and what is invented</h2>
+    <p>Playback is a depiction built on top of survey data. The survey records a start time, an end time, a path and sometimes a damage outline. Everything between those points is interpolated.</p>
+    <ul>
+      <li><b>Position is interpolated.</b> The tornado moves at constant speed from its start time to its end time. Real tornadoes speed up, slow down and sometimes loop, and nothing records that. The readout says "timing estimated" for this reason.</li>
+      <li><b>The damage swath</b> grows at its true width where the NWS published an outline. Where it did not, a constant band at the maximum surveyed width is drawn and labeled approximate.</li>
+      <li><b>Rating zones.</b> Some outlines have separate EF zones, and the readout shows the rating under the tornado. Others are one outline for the whole tornado, drawn in one color, and the readout says "overall".</li>
+      <li><b>The funnel is a depiction.</b> Damage paths are usually much wider than the visible funnel, so you can switch between a funnel sized to the damage width and a narrower one. No sound, no debris, no rotation speed is modeled.</li>
+      <li><b>Playback is turned off</b> when the survey timing cannot be trusted: start and end times identical, end before start, an implied speed over 120 mph, or more than three hours on the ground. The path and damage are still shown.</li>
+    </ul>
+
+    <h2>Warnings and lead time</h2>
+    <p>For each tornado the site finds the NWS tornado warning polygons that cover its start and compares issue time to the survey's start time. Lead time is the minutes between them. A negative lead means the warning was issued after the tornado began. A single warning can cover several tornadoes, and the card says so. Lead time depends on the survey's start time, so it is flagged as uncertain wherever that timing is unreliable. A long lead (for example a warning that was already active for an hour) says little about how much time people had once a funnel formed.</p>
+
+    <h2>The famous ten</h2>
+    <p>Joplin 2011, Tuscaloosa-Birmingham 2011, Hackleburg-Phil Campbell 2011, El Reno 2011, Moore 2013, El Reno 2013, Greenfield 2024, Fairdale 2015, Moore 1999 and Greensburg 2007. They are always on the map and are not counted in the filters, top lists or stats, which cover 2026 only.</p>
+    <ul>
+      <li><b>Surveyed lines.</b> Where the NWS toolkit holds a survey line (Tuscaloosa, Fairdale, Greenfield), that line is the path.</li>
+      <li><b>Derived centerlines.</b> Where it holds only a damage outline (Hackleburg, both El Renos, Moore 2013), the path is the middle of that outline, found by slicing across it. It is not a surveyed centerline.</li>
+      <li><b>Hand-traced paths.</b> Joplin, Moore 1999 and Greensburg predate or fall outside the toolkit's coverage. Their paths are traced through landmarks the NWS names along the track and can be off by a mile or more. The damage band on these is one constant width. Greensburg's drawn path is about a quarter shorter than the SPC length.</li>
+      <li><b>Sources disagree.</b> Death counts, widths, lengths and start times differ between the SPC database, NWS summaries and later studies. Each card lists the conflicts it found under "Where sources differ", and the headline numbers come from the SPC.</li>
+      <li><b>Moore 1999 is F5.</b> The Enhanced Fujita scale did not exist until 2007, so it keeps its original Fujita rating.</li>
+    </ul>
+
+    <h2>What this is not</h2>
+    <ul>
+      <li>Not a forecast and not safety guidance. For weather decisions use <a href="https://www.weather.gov/" rel="noopener">weather.gov</a> and your local NWS office.</li>
+      <li>Not an official NWS or NOAA product, and not affiliated with them. The display font is a style nod to broadcast character generators. The site never produces alert tones or anything that looks like a live warning.</li>
+      <li>A record of people's worst days. The death and injury counts are real, so the site shows them plainly and without decoration.</li>
+    </ul>
+
+    <h2>Updates</h2>
+    <p id="updates">The 2026 data is rebuilt once a day from the NWS toolkit and the Iowa Mesonet. Surveys can be added or changed for weeks after a storm, so a tornado's rating, width or notes can change between visits.</p>
+
+    <h2>Credits and licenses</h2>
+    <ul>
+      <li>Map engine: <a href="https://maplibre.org/" rel="noopener">MapLibre GL JS</a> (BSD 3-clause). 3D scene: <a href="https://threejs.org/" rel="noopener">three.js</a> (MIT).</li>
+      <li>Display font: <a href="https://fonts.google.com/specimen/VT323" rel="noopener">VT323</a> by Peter Hull (SIL Open Font License).</li>
+      <li>EF colors follow the SPC convective outlook palette.</li>
+      <li>Source code and data build scripts: <a href="https://github.com/brendanurganus/twisterchaser" rel="noopener">github.com/brendanurganus/twisterchaser</a>.</li>
+    </ul>
+    <p class="dim end">Found an error? Open an issue on the repository and name the tornado.</p>
+  </main>
+  <script type="module" src="js/about.js"></script>
+</body>
+</html>

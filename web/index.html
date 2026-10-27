@@ -13,6 +13,17 @@
 <body data-view="3d">
   <div id="map" aria-label="Map of 2026 US tornado tracks"></div>
 
+  <div id="intro" role="dialog" aria-label="The year in tracks" hidden>
+    <canvas id="introCanvas" aria-hidden="true"></canvas>
+    <h2 id="introTitle">The year in tracks</h2>
+    <button id="introSkip" type="button">Skip</button>
+    <div id="introFoot">
+      <div id="introDate" aria-hidden="true"></div>
+      <div id="introCount" aria-live="off"></div>
+    </div>
+    <p id="introSub"></p>
+  </div>
+
   <div id="loading" role="status">
     <p id="loadingText">Loading terrain and tornado tracks</p>
   </div>
@@ -36,6 +47,7 @@
         <div id="panelLists" hidden></div>
         <div id="panelStats" hidden></div>
         <div id="panelFamous" hidden></div>
+        <p class="aboutlink"><a href="about.html">About this data, its limits and sources</a></p>
       </div>
     </section>
   </div>

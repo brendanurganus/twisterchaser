@@ -1,0 +1,33 @@
+/* Long-form page: unlike the map pages it scrolls. */
+html, body.doc { height: auto; overflow: auto; }
+body.doc { background: var(--base); }
+.doc main { max-width: 760px; margin: 0 auto; padding: 28px 20px 80px; font-size: 16px; line-height: 1.55; }
+.doc h1 { font-size: 54px; letter-spacing: 0.1em; margin: 18px 0 10px; color: #fff; }
+.doc h2 { font-size: 30px; letter-spacing: 0.1em; color: var(--ice); margin: 40px 0 10px; }
+.doc p, .doc ul { margin: 0 0 12px; }
+.doc ul { padding-left: 20px; }
+.doc li { margin-bottom: 8px; }
+.doc a { color: var(--ice); }
+.doc .lede { font-size: 18px; color: var(--text); }
+.doc .dim { color: var(--haze); font-size: 14px; }
+.doc .end { margin-top: 36px; }
+.doc .back { display: inline-block; margin-bottom: 4px; }
+.now { background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 8px; padding: 6px 18px 14px; margin: 22px 0 6px; }
+.now h2 { margin-top: 12px; }
+.nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px 18px; margin: 12px 0 0; }
+.nums dt { color: var(--haze); font-size: 13px; }
+.nums dd { margin: 2px 0 0; font-size: 26px; font-weight: 600; }
+.nums small { font-size: 14px; color: var(--haze); font-weight: 400; }
+table.src { width: 100%; border-collapse: collapse; font-size: 14px; margin: 8px 0 0; }
+.src th { text-align: left; color: var(--haze); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--panel-edge); }
+.src td { padding: 8px; vertical-align: top; border-bottom: 1px solid rgba(143, 200, 240, 0.08); }
+@media (max-width: 640px) {
+  .doc h1 { font-size: 40px; }
+  .doc h2 { font-size: 26px; }
+  table.src thead { display: none; }
+  table.src, .src tbody, .src tr, .src td { display: block; }
+  .src tr { padding: 8px 0; border-bottom: 1px solid var(--panel-edge); }
+  .src td { border: 0; padding: 1px 0; }
+  .src td:first-child { font-weight: 600; }
+}
+@media print { body.doc { background: #fff; color: #000; } }
