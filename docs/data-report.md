@@ -1,6 +1,6 @@
 # Data cleaning report, 2026
 
-Source data fetched 2026-10-29T11:00:06Z.
+Source data fetched 2026-10-30T10:57:53Z.
 
 ## What went in and what came out
 
@@ -37,7 +37,7 @@ Source data fetched 2026-10-29T11:00:06Z.
 
 ## Warnings
 
-- Tornado warnings in the archive: 2842
+- Tornado warnings in the archive: 2843
 - Tornadoes matched to a warning: **933**; none: 165
 - Warned after the tornado began (negative lead): 136
 - Median lead when warned first: 16.0 min (max 59.0)

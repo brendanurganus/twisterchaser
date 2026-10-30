@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "fetched_utc": "2026-10-29T11:00:06Z",
+  "fetched_utc": "2026-10-30T10:57:53Z",
   "filters": {
     "dropped_not_rated": {
       "EFU (unrated, removed by decision)": 153,
@@ -67,7 +67,7 @@
     "tracks_with_outline_coverage_ge_0.8": 221
   },
   "warnings": {
-    "tornado_warnings_in_archive": 2842,
+    "tornado_warnings_in_archive": 2843,
     "tornadoes_with_warning": 933,
     "tornadoes_without_warning": 165,
     "warned_after_tornado_began": 136,
