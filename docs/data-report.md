@@ -1,11 +1,11 @@
 # Data cleaning report, 2026
 
-Source data fetched 2026-11-02T11:13:02Z.
+Source data fetched 2026-11-03T11:09:08Z.
 
 ## What went in and what came out
 
-- DAT track records pulled: **1304**
-- Rated tornadoes kept: **1102** EF0 455, EF1 560, EF2 70, EF3 16, EF4 1
+- DAT track records pulled: **1305**
+- Rated tornadoes kept: **1103** EF0 455, EF1 561, EF2 70, EF3 16, EF4 1
 - Deaths in kept records: 15, injuries: 194
 
 ## Removed
@@ -31,14 +31,14 @@ Source data fetched 2026-11-02T11:13:02Z.
 ## Damage outlines
 
 - Tornado-rated outline polygons: 585, matched to a track: 557
-- Tracks with a real outline: **226 of 1102** (20%); 222 cover at least 80% of the track
+- Tracks with a real outline: **226 of 1103** (20%); 222 cover at least 80% of the track
 - Ambiguous polygons resolved by overlap: 22
 - Joined by geometry and date because DAT's `path_guid` key is mostly empty.
 
 ## Warnings
 
-- Tornado warnings in the archive: 2847
-- Tornadoes matched to a warning: **936**; none: 166
+- Tornado warnings in the archive: 2851
+- Tornadoes matched to a warning: **936**; none: 167
 - Warned after the tornado began (negative lead): 137
 - Median lead when warned first: 17.0 min (max 59.0)
 - Warnings covering more than one tornado: 181 (most: 6)
