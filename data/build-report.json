@@ -1,9 +1,9 @@
 {
   "year": 2026,
-  "fetched_utc": "2026-11-03T11:09:08Z",
+  "fetched_utc": "2026-11-04T11:26:51Z",
   "filters": {
     "dropped_not_rated": {
-      "EFU (unrated, removed by decision)": 153,
+      "EFU (unrated, removed by decision)": 154,
       "TSTM/Wind (not a tornado)": 39,
       "N/A (no usable rating or geometry)": 1
     },
@@ -24,11 +24,11 @@
     ]
   },
   "flags": {
-    "tornadoes_kept": 1103,
+    "tornadoes_kept": 1104,
     "width_missing_or_zero": 66,
     "max_wind_missing_or_zero": 17,
-    "name_missing_or_junk": 239,
-    "single_segment_straight_line": 230,
+    "name_missing_or_junk": 240,
+    "single_segment_straight_line": 231,
     "state_unresolved": 0,
     "playback_disabled_timing": 44,
     "playback_disabled_reasons": {
@@ -39,12 +39,12 @@
     },
     "property_damage": "withheld: no documented units, ~98% missing/zero"
   },
-  "dat_line_records": 1305,
+  "dat_line_records": 1307,
   "dat_polygon_records": 757,
   "efscale_counts_raw": {
     "EF1": 562,
-    "EF0": 463,
-    "EFU": 153,
+    "EF0": 464,
+    "EFU": 154,
     "EF2": 70,
     "TSTM/Wind": 39,
     "EF3": 16,
@@ -62,14 +62,14 @@
     },
     "ambiguous_polygons_resolved_by_overlap": 22,
     "tracks_with_outline": 226,
-    "tracks_total": 1103,
+    "tracks_total": 1104,
     "share_with_outline": 0.205,
     "tracks_with_outline_coverage_ge_0.8": 222
   },
   "warnings": {
-    "tornado_warnings_in_archive": 2851,
+    "tornado_warnings_in_archive": 2861,
     "tornadoes_with_warning": 936,
-    "tornadoes_without_warning": 167,
+    "tornadoes_without_warning": 168,
     "warned_after_tornado_began": 137,
     "median_lead_min_when_warned_first": 17.0,
     "max_lead_min": 59.0,
@@ -78,9 +78,9 @@
     "most_tornadoes_in_one_warning": 6
   },
   "final": {
-    "tornadoes": 1103,
+    "tornadoes": 1104,
     "by_ef": {
-      "EF0": 455,
+      "EF0": 456,
       "EF1": 561,
       "EF2": 70,
       "EF3": 16,
@@ -88,10 +88,10 @@
     },
     "deaths": 15,
     "injuries": 194,
-    "playable": 1059,
+    "playable": 1060,
     "date_range_local": [
       "2026-01-08",
-      "2026-11-01"
+      "2026-11-02"
     ]
   }
 }
