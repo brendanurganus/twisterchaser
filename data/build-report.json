@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "fetched_utc": "2026-11-07T10:56:00Z",
+  "fetched_utc": "2026-11-08T10:57:00Z",
   "filters": {
     "dropped_not_rated": {
       "EFU (unrated, removed by decision)": 154,
@@ -24,10 +24,10 @@
     ]
   },
   "flags": {
-    "tornadoes_kept": 1107,
+    "tornadoes_kept": 1110,
     "width_missing_or_zero": 66,
     "max_wind_missing_or_zero": 17,
-    "name_missing_or_junk": 240,
+    "name_missing_or_junk": 243,
     "single_segment_straight_line": 231,
     "state_unresolved": 0,
     "playback_disabled_timing": 44,
@@ -39,11 +39,11 @@
     },
     "property_damage": "withheld: no documented units, ~98% missing/zero"
   },
-  "dat_line_records": 1310,
-  "dat_polygon_records": 759,
+  "dat_line_records": 1313,
+  "dat_polygon_records": 762,
   "efscale_counts_raw": {
-    "EF1": 563,
-    "EF0": 466,
+    "EF1": 565,
+    "EF0": 467,
     "EFU": 154,
     "EF2": 70,
     "TSTM/Wind": 39,
@@ -52,8 +52,8 @@
     "N/A": 1
   },
   "outlines": {
-    "tornado_rated_polygons": 587,
-    "matched_to_a_track": 559,
+    "tornado_rated_polygons": 590,
+    "matched_to_a_track": 562,
     "unmatched": {
       "EF3": 3,
       "EF0": 19,
@@ -61,34 +61,34 @@
       "EF2": 2
     },
     "ambiguous_polygons_resolved_by_overlap": 22,
-    "tracks_with_outline": 228,
-    "tracks_total": 1107,
-    "share_with_outline": 0.206,
-    "tracks_with_outline_coverage_ge_0.8": 224
+    "tracks_with_outline": 231,
+    "tracks_total": 1110,
+    "share_with_outline": 0.208,
+    "tracks_with_outline_coverage_ge_0.8": 227
   },
   "warnings": {
     "tornado_warnings_in_archive": 2866,
-    "tornadoes_with_warning": 938,
-    "tornadoes_without_warning": 169,
-    "warned_after_tornado_began": 139,
-    "median_lead_min_when_warned_first": 17.0,
+    "tornadoes_with_warning": 940,
+    "tornadoes_without_warning": 170,
+    "warned_after_tornado_began": 140,
+    "median_lead_min_when_warned_first": 16.5,
     "max_lead_min": 59.0,
     "median_negative_lead_min": -4.0,
     "warnings_covering_multiple_tornadoes": 181,
     "most_tornadoes_in_one_warning": 6
   },
   "final": {
-    "tornadoes": 1107,
+    "tornadoes": 1110,
     "by_ef": {
-      "EF0": 458,
-      "EF1": 562,
+      "EF0": 459,
+      "EF1": 564,
       "EF2": 70,
       "EF3": 16,
       "EF4": 1
     },
     "deaths": 15,
     "injuries": 194,
-    "playable": 1063,
+    "playable": 1066,
     "date_range_local": [
       "2026-01-08",
       "2026-11-03"
