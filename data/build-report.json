@@ -1,9 +1,9 @@
 {
   "year": 2026,
-  "fetched_utc": "2026-11-09T11:12:21Z",
+  "fetched_utc": "2026-11-10T11:04:29Z",
   "filters": {
     "dropped_not_rated": {
-      "EFU (unrated, removed by decision)": 154,
+      "EFU (unrated, removed by decision)": 153,
       "TSTM/Wind (not a tornado)": 39,
       "N/A (no usable rating or geometry)": 1
     },
@@ -24,7 +24,7 @@
     ]
   },
   "flags": {
-    "tornadoes_kept": 1105,
+    "tornadoes_kept": 1106,
     "width_missing_or_zero": 66,
     "max_wind_missing_or_zero": 17,
     "name_missing_or_junk": 238,
@@ -42,9 +42,9 @@
   "dat_line_records": 1308,
   "dat_polygon_records": 762,
   "efscale_counts_raw": {
-    "EF1": 562,
+    "EF1": 563,
     "EF0": 466,
-    "EFU": 154,
+    "EFU": 153,
     "EF2": 69,
     "TSTM/Wind": 39,
     "EF3": 16,
@@ -62,14 +62,14 @@
     },
     "ambiguous_polygons_resolved_by_overlap": 22,
     "tracks_with_outline": 231,
-    "tracks_total": 1105,
+    "tracks_total": 1106,
     "share_with_outline": 0.209,
     "tracks_with_outline_coverage_ge_0.8": 227
   },
   "warnings": {
     "tornado_warnings_in_archive": 2866,
     "tornadoes_with_warning": 935,
-    "tornadoes_without_warning": 170,
+    "tornadoes_without_warning": 171,
     "warned_after_tornado_began": 140,
     "median_lead_min_when_warned_first": 17.0,
     "max_lead_min": 59.0,
@@ -78,17 +78,17 @@
     "most_tornadoes_in_one_warning": 6
   },
   "final": {
-    "tornadoes": 1105,
+    "tornadoes": 1106,
     "by_ef": {
       "EF0": 458,
-      "EF1": 561,
+      "EF1": 562,
       "EF2": 69,
       "EF3": 16,
       "EF4": 1
     },
     "deaths": 15,
     "injuries": 194,
-    "playable": 1062,
+    "playable": 1063,
     "date_range_local": [
       "2026-01-08",
       "2026-11-03"
