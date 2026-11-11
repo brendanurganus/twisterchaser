@@ -1,23 +1,23 @@
 # Data cleaning report, 2026
 
-Source data fetched 2026-11-10T11:04:29Z.
+Source data fetched 2026-11-11T11:14:03Z.
 
 ## What went in and what came out
 
-- DAT track records pulled: **1308**
+- DAT track records pulled: **1309**
 - Rated tornadoes kept: **1106** EF0 458, EF1 562, EF2 69, EF3 16, EF4 1
 - Deaths in kept records: 15, injuries: 194
 
 ## Removed
 
-- 153 x EFU (unrated, removed by decision)
+- 154 x EFU (unrated, removed by decision)
 - 39 x TSTM/Wind (not a tornado)
 - 1 x N/A (no usable rating or geometry)
 - 9 x exact duplicate record
 
 ## Flagged but kept
 
-- Width missing or zero: 66 (shown as not recorded)
+- Width missing or zero: 65 (shown as not recorded)
 - Peak wind missing or zero: 17
 - No usable name (label generated from nearest town): 238
 - Straight 2-point tracks: 230

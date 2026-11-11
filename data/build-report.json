@@ -1,9 +1,9 @@
 {
   "year": 2026,
-  "fetched_utc": "2026-11-10T11:04:29Z",
+  "fetched_utc": "2026-11-11T11:14:03Z",
   "filters": {
     "dropped_not_rated": {
-      "EFU (unrated, removed by decision)": 153,
+      "EFU (unrated, removed by decision)": 154,
       "TSTM/Wind (not a tornado)": 39,
       "N/A (no usable rating or geometry)": 1
     },
@@ -25,7 +25,7 @@
   },
   "flags": {
     "tornadoes_kept": 1106,
-    "width_missing_or_zero": 66,
+    "width_missing_or_zero": 65,
     "max_wind_missing_or_zero": 17,
     "name_missing_or_junk": 238,
     "single_segment_straight_line": 230,
@@ -39,12 +39,12 @@
     },
     "property_damage": "withheld: no documented units, ~98% missing/zero"
   },
-  "dat_line_records": 1308,
+  "dat_line_records": 1309,
   "dat_polygon_records": 762,
   "efscale_counts_raw": {
     "EF1": 563,
     "EF0": 466,
-    "EFU": 153,
+    "EFU": 154,
     "EF2": 69,
     "TSTM/Wind": 39,
     "EF3": 16,
