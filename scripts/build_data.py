@@ -312,9 +312,18 @@ def main():
     by_ef = collections.Counter(f["properties"]["efscale"] for f in lines)
     rep["efscale_counts_raw"] = dict(by_ef.most_common())
     kept, dropped = [], collections.Counter()
+
+    def usable_line(g):
+        """True when the geometry holds at least two points. DAT sometimes serves a line with none."""
+        if not g:
+            return False
+        c = g.get("coordinates") or []
+        n = sum(len(part) for part in c) if g.get("type") == "MultiLineString" else len(c)
+        return n >= 2
+
     for f in lines:
         ef = f["properties"]["efscale"]
-        if ef in RATED and f.get("geometry"):
+        if ef in RATED and usable_line(f.get("geometry")):
             kept.append(f)
         elif ef == "EFU":
             dropped["EFU (unrated, removed by decision)"] += 1
