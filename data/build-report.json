@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "fetched_utc": "2026-11-17T16:33:15Z",
+  "fetched_utc": "2026-11-18T11:16:08Z",
   "filters": {
     "dropped_not_rated": {
       "EFU (unrated, removed by decision)": 154,
@@ -21,11 +21,11 @@
     ]
   },
   "flags": {
-    "tornadoes_kept": 1113,
+    "tornadoes_kept": 1115,
     "width_missing_or_zero": 64,
     "max_wind_missing_or_zero": 17,
     "name_missing_or_junk": 239,
-    "single_segment_straight_line": 230,
+    "single_segment_straight_line": 232,
     "state_unresolved": 0,
     "playback_disabled_timing": 44,
     "playback_disabled_reasons": {
@@ -36,11 +36,11 @@
     },
     "property_damage": "withheld: no documented units, ~98% missing/zero"
   },
-  "dat_line_records": 1310,
+  "dat_line_records": 1312,
   "dat_polygon_records": 765,
   "efscale_counts_raw": {
-    "EF1": 566,
-    "EF0": 463,
+    "EF1": 567,
+    "EF0": 464,
     "EFU": 154,
     "EF2": 70,
     "TSTM/Wind": 39,
@@ -50,23 +50,23 @@
   },
   "outlines": {
     "tornado_rated_polygons": 593,
-    "matched_to_a_track": 565,
+    "matched_to_a_track": 566,
     "unmatched": {
       "EF3": 3,
-      "EF0": 19,
+      "EF0": 18,
       "EF1": 4,
       "EF2": 2
     },
     "ambiguous_polygons_resolved_by_overlap": 23,
-    "tracks_with_outline": 232,
-    "tracks_total": 1113,
-    "share_with_outline": 0.208,
-    "tracks_with_outline_coverage_ge_0.8": 228
+    "tracks_with_outline": 233,
+    "tracks_total": 1115,
+    "share_with_outline": 0.209,
+    "tracks_with_outline_coverage_ge_0.8": 229
   },
   "warnings": {
     "tornado_warnings_in_archive": 2873,
     "tornadoes_with_warning": 942,
-    "tornadoes_without_warning": 171,
+    "tornadoes_without_warning": 173,
     "warned_after_tornado_began": 140,
     "median_lead_min_when_warned_first": 17.0,
     "max_lead_min": 59.0,
@@ -75,20 +75,20 @@
     "most_tornadoes_in_one_warning": 6
   },
   "final": {
-    "tornadoes": 1113,
+    "tornadoes": 1115,
     "by_ef": {
-      "EF0": 461,
-      "EF1": 565,
+      "EF0": 462,
+      "EF1": 566,
       "EF2": 70,
       "EF3": 16,
       "EF4": 1
     },
     "deaths": 15,
     "injuries": 194,
-    "playable": 1069,
+    "playable": 1071,
     "date_range_local": [
       "2026-01-08",
-      "2026-11-12"
+      "2026-11-14"
     ]
   }
 }
