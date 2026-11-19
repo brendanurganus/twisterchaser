@@ -1,10 +1,10 @@
 {
   "year": 2026,
-  "fetched_utc": "2026-11-18T11:16:08Z",
+  "fetched_utc": "2026-11-19T11:15:54Z",
   "filters": {
     "dropped_not_rated": {
-      "EFU (unrated, removed by decision)": 154,
-      "TSTM/Wind (not a tornado)": 39,
+      "EFU (unrated, removed by decision)": 155,
+      "TSTM/Wind (not a tornado)": 38,
       "N/A (no usable rating or geometry)": 1,
       "EF0 (no usable rating or geometry)": 1
     },
@@ -41,9 +41,9 @@
   "efscale_counts_raw": {
     "EF1": 567,
     "EF0": 464,
-    "EFU": 154,
+    "EFU": 155,
     "EF2": 70,
-    "TSTM/Wind": 39,
+    "TSTM/Wind": 38,
     "EF3": 16,
     "EF4": 1,
     "N/A": 1

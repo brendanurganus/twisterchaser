@@ -1,6 +1,6 @@
 # Data cleaning report, 2026
 
-Source data fetched 2026-11-18T11:16:08Z.
+Source data fetched 2026-11-19T11:15:54Z.
 
 ## What went in and what came out
 
@@ -10,8 +10,8 @@ Source data fetched 2026-11-18T11:16:08Z.
 
 ## Removed
 
-- 154 x EFU (unrated, removed by decision)
-- 39 x TSTM/Wind (not a tornado)
+- 155 x EFU (unrated, removed by decision)
+- 38 x TSTM/Wind (not a tornado)
 - 1 x N/A (no usable rating or geometry)
 - 1 x EF0 (no usable rating or geometry)
 - 2 x exact duplicate record
