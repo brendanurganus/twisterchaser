@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "fetched_utc": "2026-11-22T10:59:24Z",
+  "fetched_utc": "2026-11-23T22:04:31Z",
   "filters": {
     "dropped_not_rated": {
       "EFU (unrated, removed by decision)": 155,
@@ -8,8 +8,12 @@
       "N/A (no usable rating or geometry)": 1,
       "EF0 (no usable rating or geometry)": 1
     },
-    "exact_duplicates_removed": 2,
+    "exact_duplicates_removed": 6,
     "exact_duplicates_detail": [
+      [
+        "DVN 2026-06-17T12:23:00Z EF1",
+        4
+      ],
       [
         "OAX 2026-06-11T11:08:00Z EF1",
         1
@@ -21,25 +25,25 @@
     ]
   },
   "flags": {
-    "tornadoes_kept": 1117,
-    "width_missing_or_zero": 62,
+    "tornadoes_kept": 1119,
+    "width_missing_or_zero": 61,
     "max_wind_missing_or_zero": 17,
-    "name_missing_or_junk": 240,
+    "name_missing_or_junk": 241,
     "single_segment_straight_line": 232,
     "state_unresolved": 0,
-    "playback_disabled_timing": 45,
+    "playback_disabled_timing": 46,
     "playback_disabled_reasons": {
       "implied speed over 120 mph": 5,
-      "start and end time are identical": 19,
+      "start and end time are identical": 20,
       "duration over 3 hours": 18,
       "end time is before start time": 3
     },
     "property_damage": "withheld: no documented units, ~98% missing/zero"
   },
-  "dat_line_records": 1314,
-  "dat_polygon_records": 766,
+  "dat_line_records": 1320,
+  "dat_polygon_records": 767,
   "efscale_counts_raw": {
-    "EF1": 568,
+    "EF1": 574,
     "EF0": 465,
     "EFU": 155,
     "EF2": 70,
@@ -49,8 +53,8 @@
     "N/A": 1
   },
   "outlines": {
-    "tornado_rated_polygons": 594,
-    "matched_to_a_track": 567,
+    "tornado_rated_polygons": 595,
+    "matched_to_a_track": 568,
     "unmatched": {
       "EF3": 3,
       "EF0": 18,
@@ -58,15 +62,15 @@
       "EF2": 2
     },
     "ambiguous_polygons_resolved_by_overlap": 23,
-    "tracks_with_outline": 234,
-    "tracks_total": 1117,
-    "share_with_outline": 0.209,
-    "tracks_with_outline_coverage_ge_0.8": 230
+    "tracks_with_outline": 235,
+    "tracks_total": 1119,
+    "share_with_outline": 0.21,
+    "tracks_with_outline_coverage_ge_0.8": 231
   },
   "warnings": {
     "tornado_warnings_in_archive": 2881,
     "tornadoes_with_warning": 944,
-    "tornadoes_without_warning": 173,
+    "tornadoes_without_warning": 175,
     "warned_after_tornado_began": 142,
     "median_lead_min_when_warned_first": 17.0,
     "max_lead_min": 59.0,
@@ -75,20 +79,20 @@
     "most_tornadoes_in_one_warning": 6
   },
   "final": {
-    "tornadoes": 1117,
+    "tornadoes": 1119,
     "by_ef": {
       "EF0": 463,
-      "EF1": 567,
+      "EF1": 569,
       "EF2": 70,
       "EF3": 16,
       "EF4": 1
     },
     "deaths": 15,
     "injuries": 194,
-    "playable": 1072,
+    "playable": 1073,
     "date_range_local": [
       "2026-01-08",
-      "2026-11-14"
+      "2026-11-22"
     ]
   }
 }
