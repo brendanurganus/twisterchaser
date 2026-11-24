@@ -1,6 +1,6 @@
 # Data cleaning report, 2026
 
-Source data fetched 2026-11-23T22:04:31Z.
+Source data fetched 2026-11-24T20:41:09Z.
 
 ## What went in and what came out
 
@@ -23,11 +23,12 @@ Source data fetched 2026-11-23T22:04:31Z.
 - No usable name (label generated from nearest town): 241
 - Straight 2-point tracks: 232
 - Property damage: withheld: no documented units, ~98% missing/zero
-- **Playback disabled for unreliable timing: 46**
+- **Playback disabled for unreliable timing: 48**
   - 5: implied speed over 120 mph
   - 20: start and end time are identical
   - 18: duration over 3 hours
-  - 3: end time is before start time
+  - 4: end time is before start time
+  - 1: implied speed under 5 mph
 
 ## Damage outlines
 

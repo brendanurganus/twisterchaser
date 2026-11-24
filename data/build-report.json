@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "fetched_utc": "2026-11-23T22:04:31Z",
+  "fetched_utc": "2026-11-24T20:41:09Z",
   "filters": {
     "dropped_not_rated": {
       "EFU (unrated, removed by decision)": 155,
@@ -31,12 +31,13 @@
     "name_missing_or_junk": 241,
     "single_segment_straight_line": 232,
     "state_unresolved": 0,
-    "playback_disabled_timing": 46,
+    "playback_disabled_timing": 48,
     "playback_disabled_reasons": {
       "implied speed over 120 mph": 5,
       "start and end time are identical": 20,
       "duration over 3 hours": 18,
-      "end time is before start time": 3
+      "end time is before start time": 4,
+      "implied speed under 5 mph": 1
     },
     "property_damage": "withheld: no documented units, ~98% missing/zero"
   },
@@ -74,7 +75,7 @@
     "warned_after_tornado_began": 142,
     "median_lead_min_when_warned_first": 17.0,
     "max_lead_min": 59.0,
-    "median_negative_lead_min": -4.0,
+    "median_negative_lead_min": -4.5,
     "warnings_covering_multiple_tornadoes": 181,
     "most_tornadoes_in_one_warning": 6
   },
@@ -89,7 +90,7 @@
     },
     "deaths": 15,
     "injuries": 194,
-    "playable": 1073,
+    "playable": 1071,
     "date_range_local": [
       "2026-01-08",
       "2026-11-22"
